@@ -465,6 +465,10 @@ powerpc*-*-*spe*)
 	esac
 	extra_options="${extra_options} g.opt fused-madd.opt powerpcspe/powerpcspe-tables.opt"
 	;;
+pcpu-*-*)
+	cpu_type=pcpu
+	target_has_targetm_common=no
+	;;
 powerpc*-*-*)
 	cpu_type=rs6000
 	extra_objs="rs6000-string.o rs6000-p8swap.o"
@@ -2384,6 +2388,10 @@ nvptx-*)
 		extra_programs="${extra_programs} mkoffload\$(exeext)"
 		tm_file="${tm_file} nvptx/offload.h"
 	fi
+	;;
+pcpu-*-*)
+	#tm_file="dbxelf.h elfos.h newlib-stdint.h ${tm_file}"
+	tm_file="newlib-stdint.h ${tm_file}"
 	;;
 pdp11-*-*)
 	tm_file="${tm_file} newlib-stdint.h"

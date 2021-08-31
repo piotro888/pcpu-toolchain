@@ -104,8 +104,9 @@ enum reg_class {
 #define SHORT_TYPE_SIZE 8
 #define LONG_TYPE_SIZE 32
 #define LONG_LONG_TYPE_SIZE 32
-#define FLOAT_TYPE_SIZE 16
-#define DOUBLE_TYPE_SIZE 32
+//float must be set to 32bit, otherwise gcc fails to build (ieee std)
+#define FLOAT_TYPE_SIZE 32 
+#define DOUBLE_TYPE_SIZE 64
 #define LONG_DOUBLE_TYPE_SIZE 32
 
 /* MEMORY */

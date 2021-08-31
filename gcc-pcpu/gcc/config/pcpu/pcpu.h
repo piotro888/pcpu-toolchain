@@ -1,6 +1,6 @@
 #ifndef PCPU_H
 #define PCPU_H
-#define dummy_cond
+
 /*
     REGISTERS
 */
@@ -18,6 +18,14 @@
 #define PCPU_R5 5
 #define PCPU_R6 6
 #define PCPU_R7 7
+
+/* sp and ra fixed */
+#define FIXED_REGISTERS { \
+  0, 0, 0, 0, 0, 0, 1, 1 }
+
+/* sp and ra fp ap */
+#define CALL_USED_REGISTERS { \
+  0, 0, 0, 0, 1, 1, 1, 1 }
 
 // number of cpu registers 
 #define FIRST_PSEUDO_REGISTER 8
@@ -40,6 +48,10 @@ enum reg_class {
   "JAL_REGS", \
   "SP_REGS",  \
   "ALL_REGS" \
+}
+
+#define REG_CLASS_CONTENTS { \
+  {0x00}, {0x7F}, {0x40}, {0x80}, {0xFF} \
 }
 
 /* number of reg_classes */
@@ -82,9 +94,16 @@ enum reg_class {
 // CHANGE LATER TO 32 !!! TODO
 #define Pmode HImode
 
+/* PC/jmp MODE 16bit */
+#define CASE_VECTOR_MODE HImode
+
+#define DEFAULT_SIGNED_CHAR 1
+
 /* MEMORY */
 /* address may contain max 1 reg */
 #define MAX_REGS_PER_ADDRESS 1
+/* accessing byte is not faster than word */
+#define SLOW_BYTE_ACCESS 1
 
 /* ALIGN */
 /* can't access not aligned data by normal instr */
@@ -97,6 +116,25 @@ enum reg_class {
 #define BIGGEST_ALIGNMENT 16 // OR 32???
 // function parameters on stack
 #define PARM_BOUNDARY 16
+/* parameter pointer points to first arg */
+#define FIRST_PARM_OFFSET(F) 0
+
+/* ASM */
+/* object labels */
+#define LOCAL_LABEL_PREFIX "."
+#define ASM_GENERATE_INTERNAL_LABEL(LABEL,PREFIX,NUM)			\
+  sprintf ((LABEL), "*%s%s%ld", (LOCAL_LABEL_PREFIX), (PREFIX), (long)(NUM))
+#define ASM_OUTPUT_ALIGN(STREAM,LOG)					\
+  fprintf (STREAM, "\t.align\t%d\n", (LOG))
+#define ASM_COMMENT_START ";"
+#define ASM_APP_ON ""
+#define ASM_APP_OFF ""
+#define TEXT_SECTION_ASM_OP  "\t.text"
+#define DATA_SECTION_ASM_OP  "\t.data"
+#define GLOBAL_ASM_OP "\t.global\t"
+#define READONLY_DATA_SECTION_ASM_OP	"\t.rodata"
+#define BSS_SECTION_ASM_OP	"\t.bss"
+
 
 /* OTHER */
 
@@ -118,3 +156,26 @@ enum reg_class {
 #define INIT_CUMULATIVE_ARGS(CUM,FNTYPE,LIBNAME,FNDECL,N_NAMED_ARGS) \
   (CUM = PCPU_R0) 
 #endif
+
+/* compile time defines -> pcpu __pcpu __pcpu__*/
+#define TARGET_CPU_CPP_BUILTINS() builtin_define_std ("pcpu"); 
+/* no function profiler */
+#define FUNCTION_PROFILER(FILE,LABELNO) (abort (), 0)
+/* everywhere set to zero / no index reg ?*/
+#define REGNO_OK_FOR_INDEX_P(REGNO) 0
+#define INDEX_REG_CLASS NO_REGS
+
+/* TMP : IMPLEMENT LATER!! */
+#define INITIAL_ELIMINATION_OFFSET(FROM, TO, OFF) (OFF)=3
+// #define ASM_OUTPUT_COMMON(FILE, NAME, SIZE, ROUNDED)  \
+// ( fputs ("\t.common ", (FILE)),		\
+//   assemble_name ((FILE), (NAME)),		\
+//   fprintf ((FILE), "," HOST_WIDE_INT_PRINT_UNSIGNED",\"bss\"\n", (SIZE)))
+// #define ASM_OUTPUT_SKIP(FILE,SIZE)  \
+//   fprintf (FILE, "\t.skip " HOST_WIDE_INT_PRINT_UNSIGNED"\n", (SIZE))
+// #define ASM_OUTPUT_LOCAL(FILE, NAME, SIZE, ALIGNED)		\
+// ( fputs ("\t.reserve ", (FILE)),					\
+//   assemble_name ((FILE), (NAME)),					\
+//   fprintf ((FILE), "," HOST_WIDE_INT_PRINT_UNSIGNED",\"bss\",%u\n",	\
+// 	   (SIZE), ((ALIGNED) / BITS_PER_UNIT)))
+// #define DBX_DEBUGGING_INFO

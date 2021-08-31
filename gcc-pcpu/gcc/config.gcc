@@ -2390,8 +2390,8 @@ nvptx-*)
 	fi
 	;;
 pcpu-*-*)
-	#tm_file="dbxelf.h elfos.h newlib-stdint.h ${tm_file}"
-	tm_file="newlib-stdint.h ${tm_file}"
+	tm_file="dbxelf.h elfos.h newlib-stdint.h ${tm_file}"
+	#tm_file="newlib-stdint.h ${tm_file}"
 	;;
 pdp11-*-*)
 	tm_file="${tm_file} newlib-stdint.h"

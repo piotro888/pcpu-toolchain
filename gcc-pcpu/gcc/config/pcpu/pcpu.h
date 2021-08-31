@@ -6,7 +6,7 @@
 */
 
 #define REGISTER_NAMES {	\
-  "r0", "r1", "r2", "r3", "r4" \
+  "r0", "r1", "r2", "r3", "r4", \
   "r5", "r6", "r7" \
 }
 
@@ -21,7 +21,7 @@
 
 /* sp and ra fixed */
 #define FIXED_REGISTERS { \
-  0, 0, 0, 0, 0, 0, 1, 1 }
+  0, 0, 0, 0, 0, 0, 0, 1 }
 
 /* sp and ra fp ap */
 #define CALL_USED_REGISTERS { \
@@ -97,7 +97,16 @@ enum reg_class {
 /* PC/jmp MODE 16bit */
 #define CASE_VECTOR_MODE HImode
 
-#define DEFAULT_SIGNED_CHAR 1
+#define DEFAULT_SIGNED_CHAR 0
+
+//copied from avr idk if neccessary
+#define INT_TYPE_SIZE 16
+#define SHORT_TYPE_SIZE 8
+#define LONG_TYPE_SIZE 32
+#define LONG_LONG_TYPE_SIZE 32
+#define FLOAT_TYPE_SIZE 16
+#define DOUBLE_TYPE_SIZE 32
+#define LONG_DOUBLE_TYPE_SIZE 32
 
 /* MEMORY */
 /* address may contain max 1 reg */
@@ -121,9 +130,9 @@ enum reg_class {
 
 /* ASM */
 /* object labels */
-#define LOCAL_LABEL_PREFIX "."
-#define ASM_GENERATE_INTERNAL_LABEL(LABEL,PREFIX,NUM)			\
-  sprintf ((LABEL), "*%s%s%ld", (LOCAL_LABEL_PREFIX), (PREFIX), (long)(NUM))
+// #define LOCAL_LABEL_PREFIX "."
+// #define ASM_GENERATE_INTERNAL_LABEL(LABEL,PREFIX,NUM)			\
+//   sprintf ((LABEL), "*%s%s%ld", (LOCAL_LABEL_PREFIX), (PREFIX), (long)(NUM))
 #define ASM_OUTPUT_ALIGN(STREAM,LOG)					\
   fprintf (STREAM, "\t.align\t%d\n", (LOG))
 #define ASM_COMMENT_START ";"
@@ -132,7 +141,7 @@ enum reg_class {
 #define TEXT_SECTION_ASM_OP  "\t.text"
 #define DATA_SECTION_ASM_OP  "\t.data"
 #define GLOBAL_ASM_OP "\t.global\t"
-#define READONLY_DATA_SECTION_ASM_OP	"\t.rodata"
+//#define READONLY_DATA_SECTION_ASM_OP	"\t.rodata"
 #define BSS_SECTION_ASM_OP	"\t.bss"
 
 
@@ -140,15 +149,17 @@ enum reg_class {
 
 /* Type to store info about function call used in compiler */
 #define CUMULATIVE_ARGS int
+#define STACK_GROWS_DOWNWARD 1
 
-#define TARGET_FRAME_POINTER_REQUIRED false
+// this was function hook aaaaaaaaaaaa
+//#define TARGET_FRAME_POINTER_REQUIRED false
 
 /* pairs of possible substitution */
 #define ELIMINABLE_REGS							\
 {{ ARG_POINTER_REGNUM,   STACK_POINTER_REGNUM}, \
  { ARG_POINTER_REGNUM,   FRAME_POINTER_REGNUM},	\
- { FRAME_POINTER_REGNUM, STACK_POINTER_REGNUM},	\
- { FRAME_POINTER_REGNUM, ARG_POINTER_REGNUM}}		\
+ { FRAME_POINTER_REGNUM, STACK_POINTER_REGNUM}}//,	
+// { FRAME_POINTER_REGNUM, ARG_POINTER_REGNUM}}		
 
 #define TRAMPOLINE_SIZE 16 //idk riscv sets that
 

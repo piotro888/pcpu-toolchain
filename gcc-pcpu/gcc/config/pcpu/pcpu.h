@@ -149,7 +149,7 @@ enum reg_class {
 /* OTHER */
 
 /* Type to store info about function call used in compiler */
-#define CUMULATIVE_ARGS int
+#define CUMULATIVE_ARGS unsigned int
 #define STACK_GROWS_DOWNWARD 1
 
 // this was function hook aaaaaaaaaaaa

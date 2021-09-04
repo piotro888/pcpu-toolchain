@@ -37,13 +37,64 @@
   "add %0, %1, %2"
 )
 
+;; CALL AND JUMPS
+
 (define_insn "jump"
 	[(set (pc)
 	(label_ref(match_operand 0 "" "")))]
 	""
 	"jmp %1")
 
+(define_expand "call"
+  [(call (match_operand:HI 0 "memory_operand" "")
+		(match_operand 1 "general_operand" ""))
+    ]
+  ""{}) ;; call not wroking without this
+
+(define_insn "*call"
+  [(call (mem:HI (match_operand:HI
+		  0 "nonmemory_operand" "i"))
+	 (match_operand 1 "" ""))]
+    ""
+    "jal r6, %0"
+)
+
+(define_expand "call_value"
+  [(set (match_operand 2 "" "")
+    (call (match_operand:HI 0 "memory_operand" "")
+		(match_operand 1 "general_operand" "")))]
+  ""{}) ;; call and set register
+
+(define_insn "*call_value"
+  [(set (match_operand 0 "" "")
+    (call (mem:HI (match_operand:HI 1 "immediate_operand" "i"))
+	      (match_operand 2 "" "")))]
+    ""
+    "jal r6, %1"
+)
+
+(define_insn "*call_value_indirect"
+  [(set (match_operand 0 "register_operand" "=r")
+	(call (mem:HI (match_operand:HI
+		       1 "register_operand" "r"))
+	      (match_operand 2 "" "")))]
+  ""
+  "jsr\\t%1")
+(define_expand "prologue"
+  [(return)]
+  "" {
+    pcpu_expand_prologue();
+    DONE;}
+  )
+
+(define_expand "epilogue"
+  [(return)]
+  "" {
+    pcpu_expand_epilogue();
+    DONE;}
+  )
+
 (define_insn "returner"
-	[(return)]
-	"reload_completed"
-	"ret")
+  [(return)]
+  "reload_completed"
+  "srs r6, 0")

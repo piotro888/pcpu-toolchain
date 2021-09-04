@@ -50,8 +50,9 @@ enum reg_class {
   "ALL_REGS" \
 }
 
+/* sp must be in general regs to perform moves, arithm */
 #define REG_CLASS_CONTENTS { \
-  {0x00}, {0x7F}, {0x40}, {0x80}, {0xFF} \
+  {0x00}, {0xFF}, {0x40}, {0x80}, {0xFF} \
 }
 
 /* number of reg_classes */

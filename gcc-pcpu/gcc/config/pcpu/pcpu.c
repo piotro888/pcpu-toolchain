@@ -141,30 +141,35 @@ static bool pcpu_function_value_regno_p (const unsigned int regno) {
   return (regno == PCPU_R0);
 }
 
-void pcpu_expand_prologue(){}
-void pcpu_expand_epilogue(){}
+struct GTY(()) machine_function
+{
+	// Number of bytes saved on the stack for callee saved registers
+	int callee_save_reg_size;
 
-// struct GTY(()) machine_function
-// {
-// 	// Number of bytes saved on the stack for callee saved registers
-// 	int callee_save_reg_size;
+	// Number of bytes saved on the stack for local variables
+	int local_var_size;
 
-// 	// Number of bytes saved on the stack for local variables
-// 	int local_var_size;
+	// The sum of 2 sizes: local vars and padding byte for sasing the 
+	// registers. Used in expand_prologue() and expand_epilogue()
+	int size_for_adjusting_sp;
+};
 
-// 	// The sum of 2 sizes: local vars and padding byte for sasing the 
-// 	// registers. Used in expand_prologue() and expand_epilogue()
-// 	int size_for_adjusting_sp;
-// };
+void pcpu_expand_prologue(){
 
-// static struct machine_function* pcpu_init_machine_status (void) {
-//   return ggc_cleared_alloc<machine_function>();
-// }
+}
 
-// static void pcpu_option_override (void) {
-//   /* Set the per-function-data initializer.  */
-//   init_machine_status = &pcpu_init_machine_status;
-// }
+void pcpu_expand_epilogue(){
+	emit_jump_insn(gen_returner());
+}
+
+static struct machine_function* pcpu_init_machine_status (void) {
+  return ggc_cleared_alloc<machine_function>();
+}
+
+static void pcpu_option_override (void) {
+  /* Set the per-function-data initializer.  */
+  init_machine_status = &pcpu_init_machine_status;
+}
 
 
 #undef TARGET_LEGITIMATE_ADDRESS_P
@@ -181,12 +186,12 @@ void pcpu_expand_epilogue(){}
 #undef TARGET_FUNCTION_VALUE_REGNO_P
 #define TARGET_FUNCTION_VALUE_REGNO_P pcpu_function_value_regno_p
 
-// #undef TARGET_OPTION_OVERRIDE
-// #define TARGET_OPTION_OVERRIDE pcpu_option_override
+#undef TARGET_OPTION_OVERRIDE
+#define TARGET_OPTION_OVERRIDE pcpu_option_override
 #undef TARGET_PRINT_OPERAND
 #define TARGET_PRINT_OPERAND pcpu_print_operand
 #undef TARGET_PRINT_OPERAND_ADDRESS
 #define TARGET_PRINT_OPERAND_ADDRESS pcpu_print_operand_address
  struct gcc_target targetm = TARGET_INITIALIZER;
 
-//#include "gt-pcpu.h"
+#include "gt-pcpu.h"

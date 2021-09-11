@@ -67,7 +67,7 @@ enum reg_class {
 
 #define BASE_REG_CLASS GENERAL_REGS
 
-#define REGNO_OK_FOR_BASE_P(r) (r >= PCPU_R0 && r <= PCPU_R7) // if ok in address
+#define REGNO_OK_FOR_BASE_P(r) (r >= PCPU_R1 && r <= PCPU_R7) // if ok in address
 
 #define REGNO_REG_CLASS(R) ((R < PCPU_R6) ? GENERAL_REGS :		\
                             (R == PCPU_R6 ? JAL_REGS : SP_REGS))
@@ -98,9 +98,9 @@ enum reg_class {
 /* PC/jmp MODE 16bit */
 #define CASE_VECTOR_MODE HImode
 
-#define DEFAULT_SIGNED_CHAR 0
+#define DEFAULT_SIGNED_CHAR 1
 
-//copied from avr idk if neccessary
+// //copied from avr idk if neccessary
 #define INT_TYPE_SIZE 16
 #define SHORT_TYPE_SIZE 8
 #define LONG_TYPE_SIZE 32
@@ -108,7 +108,7 @@ enum reg_class {
 //float must be set to 32bit, otherwise gcc fails to build (ieee std)
 #define FLOAT_TYPE_SIZE 32 
 #define DOUBLE_TYPE_SIZE 64
-#define LONG_DOUBLE_TYPE_SIZE 32
+#define LONG_DOUBLE_TYPE_SIZE 64
 
 /* MEMORY */
 /* address may contain max 1 reg */
@@ -127,8 +127,8 @@ enum reg_class {
 #define BIGGEST_ALIGNMENT 16 // OR 32???
 // function parameters on stack
 #define PARM_BOUNDARY 16
-/* parameter pointer points to first arg */
-#define FIRST_PARM_OFFSET(F) 0
+/* parameter pointer points to first arg FIXME */
+#define FIRST_PARM_OFFSET(F) 4
 
 /* ASM */
 /* object labels */
@@ -168,7 +168,7 @@ enum reg_class {
 //verify later! idk moxie
 #define INIT_CUMULATIVE_ARGS(CUM,FNTYPE,LIBNAME,FNDECL,N_NAMED_ARGS) \
   (CUM = PCPU_R0) 
-#endif
+
 
 /* compile time defines -> pcpu __pcpu __pcpu__*/
 #define TARGET_CPU_CPP_BUILTINS() builtin_define_std ("pcpu"); 
@@ -179,7 +179,10 @@ enum reg_class {
 #define INDEX_REG_CLASS NO_REGS
 
 /* TMP : IMPLEMENT LATER!! */
-#define INITIAL_ELIMINATION_OFFSET(FROM, TO, OFF) (OFF)=3
+#define INITIAL_ELIMINATION_OFFSET(FROM, TO, OFF) (OFF)=4
+
+#endif
+/*
 // #define ASM_OUTPUT_COMMON(FILE, NAME, SIZE, ROUNDED)  \
 // ( fputs ("\t.common ", (FILE)),		\
 //   assemble_name ((FILE), (NAME)),		\
@@ -192,3 +195,4 @@ enum reg_class {
 //   fprintf ((FILE), "," HOST_WIDE_INT_PRINT_UNSIGNED",\"bss\",%u\n",	\
 // 	   (SIZE), ((ALIGNED) / BITS_PER_UNIT)))
 // #define DBX_DEBUGGING_INFO
+*/

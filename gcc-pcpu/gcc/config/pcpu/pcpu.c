@@ -15,6 +15,8 @@
 #include "output.h"
 #include "calls.h"
 #include "builtins.h"
+#include "df.h"
+#include "calls.h"
 
 /* This file should be included last.  */
 #include "target-def.h"
@@ -114,9 +116,23 @@ static bool pcpu_legitimate_address_p(machine_mode mode ATTRIBUTE_UNUSED, rtx x,
 	}
 }
 
-static rtx pcpu_function_value(const_tree valtype, const_tree fntype_or_decl, bool outgoing) {
+static rtx pcpu_function_value(const_tree valtype, const_tree fntype_or_decl ATTRIBUTE_UNUSED, bool outgoing ATTRIBUTE_UNUSED) {
 	//return value of function always in reg 0
 	return gen_rtx_REG(TYPE_MODE(valtype), PCPU_R0);
+}
+
+static rtx pcpu_libcall_value (machine_mode mode, const_rtx fun ATTRIBUTE_UNUSED) {
+  return gen_rtx_REG (mode, PCPU_R0);
+}
+
+static bool pcpu_pass_by_reference (cumulative_args_t cum ATTRIBUTE_UNUSED, machine_mode mode, const_tree type, bool named ATTRIBUTE_UNUSED){
+	return false; //TODO FIXME
+}
+
+static bool pcpu_return_in_memory (const_tree type, const_tree fntype ATTRIBUTE_UNUSED) {
+//   const HOST_WIDE_INT size = int_size_in_bytes (type);
+//   return (size == -1 || size > 2 * UNITS_PER_WORD);
+	return false;
 }
 
 static rtx pcpu_function_arg (cumulative_args_t cum_v, machine_mode mode, const_tree type ATTRIBUTE_UNUSED, bool named ATTRIBUTE_UNUSED) {
@@ -144,18 +160,56 @@ static bool pcpu_function_value_regno_p (const unsigned int regno) {
 struct GTY(()) machine_function
 {
 	// Number of bytes saved on the stack for callee saved registers
-	int callee_save_reg_size;
+	int callee_saved_reg_size;
 
 	// Number of bytes saved on the stack for local variables
-	int local_var_size;
+	int local_vars_size;
 
 	// The sum of 2 sizes: local vars and padding byte for sasing the 
 	// registers. Used in expand_prologue() and expand_epilogue()
 	int size_for_adjusting_sp;
 };
 
-void pcpu_expand_prologue(){
+void pcpu_compute_frame(){
 
+	int stack_alignment = 2;
+	int padding_locals;
+	int regno;
+
+	/* Padding needed for each element of the frame.  */
+	cfun->machine->local_vars_size = get_frame_size();
+
+	/* Align to the stack alignment.  */
+	padding_locals = cfun->machine->local_vars_size % stack_alignment;
+	if (padding_locals)
+		padding_locals = stack_alignment - padding_locals;
+	cfun->machine->local_vars_size += padding_locals;
+
+	cfun->machine->callee_saved_reg_size = 0;
+
+	for (regno = 0; regno < FIRST_PSEUDO_REGISTER; regno++)
+		if (df_regs_ever_live_p(regno) && (!call_used_regs[regno]))
+			cfun->machine->callee_saved_reg_size += 2;
+	cfun->machine->callee_saved_reg_size += 2; // for fp
+	cfun->machine->size_for_adjusting_sp = crtl->args.pretend_args_size + cfun->machine->local_vars_size + (ACCUMULATE_OUTGOING_ARGS ? (HOST_WIDE_INT) crtl->outgoing_args_size : 0);
+}
+#define DISABLE_F_PRO
+void pcpu_expand_prologue(){
+	#ifndef DISABLE_F_PRO
+	int regno, rnpos=1;
+	rtx insn;
+	pcpu_compute_frame();
+	emit_insn(gen_movhi(gen_rtx_MEM(Pmode, stack_pointer_rtx), hard_frame_pointer_rtx));
+	emit_insn(gen_movhi(hard_frame_pointer_rtx, stack_pointer_rtx));
+	emit_insn(gen_addhi3(stack_pointer_rtx, stack_pointer_rtx, GEN_INT(-cfun->machine->size_for_adjusting_sp)));
+	for (regno = 0; regno < FIRST_PSEUDO_REGISTER; regno++) {
+		if (!fixed_regs[regno] && df_regs_ever_live_p (regno) && !call_used_regs[regno]) {
+			insn = emit_insn(gen_movhi(gen_rtx_MEM(Pmode, gen_rtx_PLUS(Pmode, stack_pointer_rtx, GEN_INT(rnpos++))), gen_rtx_REG(Pmode, regno)));
+			//insn = emit_insn(gen_movhi(gen_rtx_MEM(Pmode, stack_pointer_rtx), gen_rtx_REG(Pmode, regno)));
+	  		RTX_FRAME_RELATED_P (insn) = 1;
+		}
+	}
+	#endif
 }
 
 void pcpu_expand_epilogue(){
@@ -172,11 +226,19 @@ static void pcpu_option_override (void) {
 }
 
 
+// #undef  TARGET_PROMOTE_PROTOTYPES
+// #define TARGET_PROMOTE_PROTOTYPES	hook_bool_const_tree_true
+
 #undef TARGET_LEGITIMATE_ADDRESS_P
 #define TARGET_LEGITIMATE_ADDRESS_P pcpu_legitimate_address_p
 
 #undef TARGET_FUNCTION_VALUE
 #define TARGET_FUNCTION_VALUE pcpu_function_value
+#undef TARGET_LIBCALL_VALUE
+#define TARGET_LIBCALL_VALUE pcpu_libcall_value
+
+// #undef  TARGET_RETURN_IN_MEMORY
+// #define TARGET_RETURN_IN_MEMORY	pcpu_return_in_memory
 
 #undef TARGET_FUNCTION_ARG
 #define TARGET_FUNCTION_ARG pcpu_function_arg
@@ -186,12 +248,25 @@ static void pcpu_option_override (void) {
 #undef TARGET_FUNCTION_VALUE_REGNO_P
 #define TARGET_FUNCTION_VALUE_REGNO_P pcpu_function_value_regno_p
 
+// #undef  TARGET_PASS_BY_REFERENCE
+// #define TARGET_PASS_BY_REFERENCE pcpu_pass_by_reference
+// #undef  TARGET_MUST_PASS_IN_STACK
+// #define TARGET_MUST_PASS_IN_STACK	must_pass_in_stack_var_size
+
 #undef TARGET_OPTION_OVERRIDE
 #define TARGET_OPTION_OVERRIDE pcpu_option_override
 #undef TARGET_PRINT_OPERAND
 #define TARGET_PRINT_OPERAND pcpu_print_operand
 #undef TARGET_PRINT_OPERAND_ADDRESS
 #define TARGET_PRINT_OPERAND_ADDRESS pcpu_print_operand_address
- struct gcc_target targetm = TARGET_INITIALIZER;
+
+// #undef TARGET_LRA_P
+// #define TARGET_LRA_P hook_bool_void_false
+// #undef TARGET_FRAME_POINTER_REQUIRED
+// #define TARGET_FRAME_POINTER_REQUIRED hook_bool_void_true
+// #undef  TARGET_MUST_PASS_IN_STACK
+// #define TARGET_MUST_PASS_IN_STACK	must_pass_in_stack_var_size
+
+struct gcc_target targetm = TARGET_INITIALIZER;
 
 #include "gt-pcpu.h"

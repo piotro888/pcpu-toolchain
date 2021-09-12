@@ -59,7 +59,7 @@
 (define_insn "*call_value"
   [(set (match_operand 0 "register_operand" "=r")
 	(call (mem:HI (match_operand:HI
-		       1 "immediate_operand" "i"))
+		       1 "general_operand" "i"))
 	      (match_operand 2 "" "")))]
     ""
     "jal r6, %1"

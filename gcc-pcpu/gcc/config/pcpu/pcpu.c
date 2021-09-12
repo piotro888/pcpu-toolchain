@@ -103,18 +103,20 @@ pcpu_print_operand_address (FILE *file, machine_mode, rtx x)
 //static void pcpu_print_operand_address(FILE* file, machine_mode, rtx x){}
 static bool pcpu_legitimate_address_p(machine_mode mode ATTRIBUTE_UNUSED, rtx x, bool strict ATTRIBUTE_UNUSED){
 	// check if address is valid
-	return true;
-	//  switch(GET_CODE(x)){
-	// 	case REG:
-	// 	case SUBREG:
-	// 		return true; // if pseudoregs def check if not pseudoreg
-	// 	case PLUS:
-	// 		return (REG_P(XEXP(x, 0)) && CONST_INT_P(XEXP(x, 1)));
-	// 	case CONST_INT:
-	// 		return true; 
-	// 	default:
-	// 		return false;
-	// }
+	debug_rtx(x);
+	 switch(GET_CODE(x)){
+		case REG:
+		case SUBREG:
+			return true; // if pseudoregs def check if not pseudoreg
+		case PLUS:
+			return (REG_P(XEXP(x, 0)) && CONST_INT_P(XEXP(x, 1)));
+		case SYMBOL_REF:
+		case LABEL_REF:
+		case CONST:
+			return true;
+		default:
+			return false;
+	}
 }
 
 static rtx pcpu_function_value(const_tree valtype, const_tree fntype_or_decl ATTRIBUTE_UNUSED, bool outgoing ATTRIBUTE_UNUSED) {

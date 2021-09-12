@@ -291,13 +291,13 @@ enum reg_class
 
 /* The register number of the frame pointer register, which is used to
    access automatic variables in the stack frame.  */
-#define FRAME_POINTER_REGNUM PCPU_R6
+#define FRAME_POINTER_REGNUM PCPU_R5
 
 /* The register number of the arg pointer register, which is used to
    access the function's argument list.  */
-#define ARG_POINTER_REGNUM PCPU_R5
+#define ARG_POINTER_REGNUM PCPU_R4
 
-#define HARD_FRAME_POINTER_REGNUM PCPU_R6
+#define HARD_FRAME_POINTER_REGNUM PCPU_R5
 
 #define ELIMINABLE_REGS							\
 {{ FRAME_POINTER_REGNUM, HARD_FRAME_POINTER_REGNUM },			\

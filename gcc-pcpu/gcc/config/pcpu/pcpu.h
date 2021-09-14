@@ -76,7 +76,7 @@
 #define REGISTER_NAMES {	\
   "$r0", "$r1",   \
   "$r2", "$r3", "$r4", "$r5",   \
-  "$r6", "$r7"}
+  "$r6", "$r7", "V$fp"}
 
 #define PCPU_R0     0
 #define PCPU_R1     1 
@@ -87,7 +87,9 @@
 #define PCPU_R6     6
 #define PCPU_R7     7
 
-#define FIRST_PSEUDO_REGISTER 8
+#define PCPU_VIRT_FP 8
+
+#define FIRST_PSEUDO_REGISTER 9
 
 enum reg_class
 {
@@ -101,7 +103,7 @@ enum reg_class
 #define REG_CLASS_CONTENTS \
 { { 0x00000000 }, /* Empty */			   \
   { 0x000000FF },  \
-  { 0x000000FF }  /* All registers */              \
+  { 0x000001FF }  /* All registers */              \
 }
 
 #define N_REG_CLASSES LIM_REG_CLASSES
@@ -112,10 +114,10 @@ enum reg_class
     "ALL_REGS" }
 
 #define FIXED_REGISTERS     { 0, 0, 0, 0, \
-			      0, 0, 0, 1 }
+			      0, 0, 0, 1, 1 }
 
-#define CALL_USED_REGISTERS { 1, 1, 1, 1, \
-			      1, 1, 1, 1 }
+#define CALL_USED_REGISTERS { 1, 0, 0, 0, \
+			      0, 1, 1, 1, 1 }
 
 /* We can't copy to or from our CC register. */
 #define AVOID_CCMODE_COPIES 1
@@ -193,7 +195,7 @@ enum reg_class
 /* Define this macro as a C expression that is nonzero for registers that are
    used by the epilogue or the return pattern.  The stack and frame
    pointer registers are already assumed to be used as needed.  */
-#define EPILOGUE_USES(R) (R == PCPU_R5)
+#define EPILOGUE_USES(R) (R == PCPU_R6)
 
 /* A C expression whose value is RTL representing the location of the
    incoming return address at the beginning of any function, before
@@ -291,7 +293,7 @@ enum reg_class
 
 /* The register number of the frame pointer register, which is used to
    access automatic variables in the stack frame.  */
-#define FRAME_POINTER_REGNUM PCPU_R5
+#define FRAME_POINTER_REGNUM PCPU_VIRT_FP
 
 /* The register number of the arg pointer register, which is used to
    access the function's argument list.  */
@@ -305,13 +307,9 @@ enum reg_class
 
 /* This macro returns the initial difference between the specified pair
    of registers.  */
-// #define INITIAL_ELIMINATION_OFFSET(FROM, TO, OFFSET)			\
-//   do {									\
-//     (OFFSET) = moxie_initial_elimination_offset ((FROM), (TO));		\
-//   } while (0)
 #define INITIAL_ELIMINATION_OFFSET(FROM, TO, OFFSET)			\
   do {									\
-    (OFFSET) = 3;		\
+    (OFFSET) = pcpu_initial_elimination_offset ((FROM), (TO));		\
   } while (0)
 
 /* A C expression that is nonzero if REGNO is the number of a hard

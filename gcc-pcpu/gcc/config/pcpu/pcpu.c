@@ -188,35 +188,75 @@ void pcpu_compute_frame(){
 		padding_locals = stack_alignment - padding_locals;
 	cfun->machine->local_vars_size += padding_locals;
 
-	cfun->machine->callee_saved_reg_size = 0;
+	cfun->machine->callee_saved_reg_size = 2*2; //return addr + old frame pointer
 
 	for (regno = 0; regno < FIRST_PSEUDO_REGISTER; regno++)
 		if (df_regs_ever_live_p(regno) && (!call_used_regs[regno]))
 			cfun->machine->callee_saved_reg_size += 2;
-	cfun->machine->callee_saved_reg_size += 2; // for fp
-	cfun->machine->size_for_adjusting_sp = crtl->args.pretend_args_size + cfun->machine->local_vars_size + (ACCUMULATE_OUTGOING_ARGS ? (HOST_WIDE_INT) crtl->outgoing_args_size : 0);
+
+	cfun->machine->size_for_adjusting_sp = crtl->args.pretend_args_size + cfun->machine->local_vars_size + cfun->machine->callee_saved_reg_size + (ACCUMULATE_OUTGOING_ARGS ? (HOST_WIDE_INT) crtl->outgoing_args_size : 0);
+	//cfun->machine->size_for_adjusting_sp /= 2; //16 bit memory width
 }
-#define DISABLE_F_PRO
+
+/*
+	FRAME
+	[INCOMING ARGS]
+	RETURN ADDR <- hard_frame_pointer 
+	OLD_FRAME_POINTER
+	[REGS] 
+	[LOCALS] <- frame_pointer_rtx (virtual)
+	[LOACLS]
+	EMPTY <- sp
+*/
 void pcpu_expand_prologue(){
-	#ifndef DISABLE_F_PRO
-	int regno, rnpos=1;
+	int regno, rnpos=4;
 	rtx insn;
 	pcpu_compute_frame();
-	emit_insn(gen_movhi(gen_rtx_MEM(Pmode, stack_pointer_rtx), hard_frame_pointer_rtx));
-	emit_insn(gen_movhi(hard_frame_pointer_rtx, stack_pointer_rtx));
-	emit_insn(gen_addhi3(stack_pointer_rtx, stack_pointer_rtx, GEN_INT(-cfun->machine->size_for_adjusting_sp)));
+	insn = emit_insn(gen_movhi(hard_frame_pointer_rtx, stack_pointer_rtx));
+	RTX_FRAME_RELATED_P (insn) = 1;
+	insn = emit_insn(gen_movhi(gen_rtx_MEM(Pmode, stack_pointer_rtx), gen_rtx_REG(Pmode, PCPU_R6)));
+	RTX_FRAME_RELATED_P (insn) = 1;
+	insn = emit_insn(gen_movhi(gen_rtx_MEM(Pmode, gen_rtx_PLUS(Pmode, stack_pointer_rtx, GEN_INT(2))), hard_frame_pointer_rtx));
+	RTX_FRAME_RELATED_P (insn) = 1;
 	for (regno = 0; regno < FIRST_PSEUDO_REGISTER; regno++) {
 		if (!fixed_regs[regno] && df_regs_ever_live_p (regno) && !call_used_regs[regno]) {
-			insn = emit_insn(gen_movhi(gen_rtx_MEM(Pmode, gen_rtx_PLUS(Pmode, stack_pointer_rtx, GEN_INT(rnpos++))), gen_rtx_REG(Pmode, regno)));
-			//insn = emit_insn(gen_movhi(gen_rtx_MEM(Pmode, stack_pointer_rtx), gen_rtx_REG(Pmode, regno)));
+			insn = emit_insn(gen_movhi(gen_rtx_MEM(Pmode, gen_rtx_PLUS(Pmode, stack_pointer_rtx, GEN_INT(rnpos+=2))), gen_rtx_REG(Pmode, regno)));
 	  		RTX_FRAME_RELATED_P (insn) = 1;
 		}
 	}
-	#endif
+	insn = emit_insn(gen_addhi3(stack_pointer_rtx, stack_pointer_rtx, GEN_INT(-cfun->machine->size_for_adjusting_sp)));
+	RTX_FRAME_RELATED_P (insn) = 1;
 }
 
 void pcpu_expand_epilogue(){
+	int regno, rnpos=4;
+	rtx insn;
+
+	emit_insn(gen_movhi(stack_pointer_rtx, hard_frame_pointer_rtx));
+    insn = emit_insn(gen_movhi(gen_rtx_REG(Pmode, PCPU_R6), gen_rtx_MEM(Pmode, stack_pointer_rtx)));
+	RTX_FRAME_RELATED_P (insn) = 1;
+	for (regno = 0; regno < FIRST_PSEUDO_REGISTER; regno++) {
+		if (!fixed_regs[regno] && df_regs_ever_live_p (regno) && !call_used_regs[regno]) {
+			insn = emit_insn(gen_movhi(gen_rtx_REG(Pmode, regno), gen_rtx_MEM(Pmode, gen_rtx_PLUS(Pmode, stack_pointer_rtx, GEN_INT(rnpos+=2)))));
+	  		RTX_FRAME_RELATED_P (insn) = 1;
+		}
+	}
+	emit_insn(gen_movhi(hard_frame_pointer_rtx, gen_rtx_MEM(Pmode, gen_rtx_PLUS(Pmode, stack_pointer_rtx, GEN_INT(2)))));
+
 	emit_jump_insn(gen_returner());
+}
+
+HOST_WIDE_INT pcpu_initial_elimination_offset (int from, int to){
+	HOST_WIDE_INT offset = 0;
+	pcpu_compute_frame();
+	printf("%d\n", cfun->machine->callee_saved_reg_size);
+	if ((from) == FRAME_POINTER_REGNUM && (to) == HARD_FRAME_POINTER_REGNUM)
+		offset = -cfun->machine->callee_saved_reg_size +2 ; //VERIFY! +2 becasue gcc begins of next addr???
+	else if ((from) == ARG_POINTER_REGNUM && (to) == HARD_FRAME_POINTER_REGNUM)
+   		offset = 0x00;
+	else
+		abort();
+	return offset;
 }
 
 static struct machine_function* pcpu_init_machine_status (void) {

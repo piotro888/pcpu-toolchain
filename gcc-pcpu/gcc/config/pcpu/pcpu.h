@@ -185,10 +185,12 @@ enum reg_class
 
 /* Offset from the argument pointer register to the first argument's
    address.  On some machines it may depend on the data type of the
-   function.  aaaa fixed i forgot about that. offset ap = 0!!!*/
-#define FIRST_PARM_OFFSET(F) 0
+   function.  aaaa fixed i forgot about that. offset ap = 0!!!
+   emm not now. 2 makes gcc happy with sp->next free*/
+#define FIRST_PARM_OFFSET(F) 2
 
-//#define STACK_POINTER_OFFSET -2
+/* for next free stack : caller argument location */
+#define STACK_POINTER_OFFSET 2
 
 /* Define this macro to nonzero value if the addresses of local variable slots
    are at negative offsets from the frame pointer.  */

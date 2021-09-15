@@ -128,25 +128,21 @@ static rtx pcpu_libcall_value (machine_mode mode, const_rtx fun ATTRIBUTE_UNUSED
 }
 
 static bool pcpu_pass_by_reference (cumulative_args_t cum ATTRIBUTE_UNUSED, machine_mode mode, const_tree type, bool named ATTRIBUTE_UNUSED){
-// 	unsigned HOST_WIDE_INT size;
+	unsigned HOST_WIDE_INT size;
 
-//   if (type)
-//     {
-//       if (AGGREGATE_TYPE_P (type))
-// 	return true;
-//       size = int_size_in_bytes (type);
-//     }
-//   else
-//     size = GET_MODE_SIZE (mode);
+	if (type) {
+		if (AGGREGATE_TYPE_P (type))
+			return true;
+		size = int_size_in_bytes (type);
+	} else 
+		size = GET_MODE_SIZE (mode);
 
-//   return size > 4*6;
-return false;
+	return size > 2*4;
 }
 
 static bool pcpu_return_in_memory (const_tree type, const_tree fntype ATTRIBUTE_UNUSED) {
-//   const HOST_WIDE_INT size = int_size_in_bytes (type);
-//   return (size == -1 || size > 2 * UNITS_PER_WORD);
-	return false;
+	const HOST_WIDE_INT size = int_size_in_bytes (type);
+	return (size == -1 || size > 2 * UNITS_PER_WORD);
 }
 
 static rtx pcpu_function_arg (cumulative_args_t cum_v, machine_mode mode, const_tree type ATTRIBUTE_UNUSED, bool named ATTRIBUTE_UNUSED) {
@@ -298,8 +294,8 @@ static void pcpu_option_override (void) {
 #undef TARGET_LIBCALL_VALUE
 #define TARGET_LIBCALL_VALUE pcpu_libcall_value
 
-// #undef  TARGET_RETURN_IN_MEMORY
-// #define TARGET_RETURN_IN_MEMORY	pcpu_return_in_memory
+#undef  TARGET_RETURN_IN_MEMORY
+#define TARGET_RETURN_IN_MEMORY	pcpu_return_in_memory
 
 #undef TARGET_FUNCTION_ARG
 #define TARGET_FUNCTION_ARG pcpu_function_arg
@@ -311,13 +307,9 @@ static void pcpu_option_override (void) {
 
 #undef  TARGET_PASS_BY_REFERENCE
 #define TARGET_PASS_BY_REFERENCE pcpu_pass_by_reference
-bool
-pcpu_must_pass_in_stack_var_size (machine_mode mode ATTRIBUTE_UNUSED,
-			     const_tree type){
-					 return true;
-				 }
+
 #undef  TARGET_MUST_PASS_IN_STACK
-#define TARGET_MUST_PASS_IN_STACK	pcpu_must_pass_in_stack_var_size
+#define TARGET_MUST_PASS_IN_STACK	must_pass_in_stack_var_size
 
 #undef TARGET_OPTION_OVERRIDE
 #define TARGET_OPTION_OVERRIDE pcpu_option_override
@@ -326,8 +318,6 @@ pcpu_must_pass_in_stack_var_size (machine_mode mode ATTRIBUTE_UNUSED,
 #undef TARGET_PRINT_OPERAND_ADDRESS
 #define TARGET_PRINT_OPERAND_ADDRESS pcpu_print_operand_address
 
-// #undef TARGET_LRA_P
-// #define TARGET_LRA_P hook_bool_void_false
 #undef TARGET_FRAME_POINTER_REQUIRED
 #define TARGET_FRAME_POINTER_REQUIRED hook_bool_void_true
 

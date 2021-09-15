@@ -176,17 +176,19 @@ enum reg_class
 
 /* Define this if the above stack space is to be considered part of the
    space allocated by the caller.  */
-// #define OUTGOING_REG_PARM_STACK_SPACE(FNTYPE) 1
-// #define STACK_PARMS_IN_REG_PARM_AREA
+ #define OUTGOING_REG_PARM_STACK_SPACE(FNTYPE) 1
+ #define STACK_PARMS_IN_REG_PARM_AREA
 
 // /* Define this if it is the responsibility of the caller to allocate
 //    the area reserved for arguments passed in registers.  */
-// #define REG_PARM_STACK_SPACE(FNDECL) (6 * UNITS_PER_WORD)
+ #define REG_PARM_STACK_SPACE(FNDECL) (1 * UNITS_PER_WORD)
 
 /* Offset from the argument pointer register to the first argument's
    address.  On some machines it may depend on the data type of the
-   function.  */
-#define FIRST_PARM_OFFSET(F) 12
+   function.  aaaa fixed i forgot about that. offset ap = 0!!!*/
+#define FIRST_PARM_OFFSET(F) 0
+
+//#define STACK_POINTER_OFFSET -2
 
 /* Define this macro to nonzero value if the addresses of local variable slots
    are at negative offsets from the frame pointer.  */
@@ -203,6 +205,8 @@ enum reg_class
 // #define INCOMING_RETURN_ADDR_RTX					\
 //   gen_frame_mem (Pmode,							\
 // 		 plus_constant (Pmode, stack_pointer_rtx, UNITS_PER_WORD))
+
+#define INCOMING_RETURN_ADDR_RTX	gen_rtx_REG(Pmode, PCPU_R6)
 
 // /* Describe how we implement __builtin_eh_return.  */
 // #define EH_RETURN_DATA_REGNO(N)	((N) < 4 ? (N+2) : INVALID_REGNUM)
@@ -314,7 +318,7 @@ enum reg_class
 
 /* A C expression that is nonzero if REGNO is the number of a hard
    register in which function arguments are sometimes passed.  */
-#define FUNCTION_ARG_REGNO_P(r) (r >= PCPU_R0 && r <= PCPU_R5)
+#define FUNCTION_ARG_REGNO_P(r) (r >= PCPU_R0 && r <= PCPU_R4)
 
 /* A macro whose definition is the name of the class to which a valid
    base register must belong.  A base register is one used in an

@@ -103,7 +103,6 @@ pcpu_print_operand_address (FILE *file, machine_mode, rtx x)
 //static void pcpu_print_operand_address(FILE* file, machine_mode, rtx x){}
 static bool pcpu_legitimate_address_p(machine_mode mode ATTRIBUTE_UNUSED, rtx x, bool strict ATTRIBUTE_UNUSED){
 	// check if address is valid
-	debug_rtx(x);
 	 switch(GET_CODE(x)){
 		case REG:
 		case SUBREG:
@@ -129,7 +128,19 @@ static rtx pcpu_libcall_value (machine_mode mode, const_rtx fun ATTRIBUTE_UNUSED
 }
 
 static bool pcpu_pass_by_reference (cumulative_args_t cum ATTRIBUTE_UNUSED, machine_mode mode, const_tree type, bool named ATTRIBUTE_UNUSED){
-	return false; //TODO FIXME
+// 	unsigned HOST_WIDE_INT size;
+
+//   if (type)
+//     {
+//       if (AGGREGATE_TYPE_P (type))
+// 	return true;
+//       size = int_size_in_bytes (type);
+//     }
+//   else
+//     size = GET_MODE_SIZE (mode);
+
+//   return size > 4*6;
+return false;
 }
 
 static bool pcpu_return_in_memory (const_tree type, const_tree fntype ATTRIBUTE_UNUSED) {
@@ -141,17 +152,20 @@ static bool pcpu_return_in_memory (const_tree type, const_tree fntype ATTRIBUTE_
 static rtx pcpu_function_arg (cumulative_args_t cum_v, machine_mode mode, const_tree type ATTRIBUTE_UNUSED, bool named ATTRIBUTE_UNUSED) {
   CUMULATIVE_ARGS *cum = get_cumulative_args (cum_v);
   // return next reg to be used for function arg
-  if (*cum < 6) //idk check later
+  if (*cum < 4) //idk check later
     return gen_rtx_REG (mode, *cum);
   else 
     return NULL_RTX;
 }
 
+#define PCPU_FUNCTION_ARG_SIZE(MODE, TYPE)	\
+  ((MODE) != BLKmode ? GET_MODE_SIZE (MODE)	\
+   : (unsigned) int_size_in_bytes (TYPE))
 static void pcpu_function_arg_advance (cumulative_args_t cum_v, machine_mode mode, const_tree type, bool named ATTRIBUTE_UNUSED) {
   CUMULATIVE_ARGS *cum = get_cumulative_args (cum_v);
 	// reserve size+1 next registers. if pointer is over avalible register use stack
-  *cum = (*cum < PCPU_R6 //change to r5??
-	  ? *cum + ((1 + GET_MODE_SIZE (mode)) / 2)
+  *cum = (*cum < PCPU_R4 //change to r6??
+	  ? *cum + ((1 + PCPU_FUNCTION_ARG_SIZE (mode, type)) / 2)
 	  : *cum);
 }
 
@@ -212,15 +226,18 @@ void pcpu_expand_prologue(){
 	int regno, rnpos=4;
 	rtx insn;
 	pcpu_compute_frame();
+	if (flag_stack_usage_info)
+    	current_function_static_stack_size = cfun->machine->size_for_adjusting_sp;
 	insn = emit_insn(gen_movhi(hard_frame_pointer_rtx, stack_pointer_rtx));
 	RTX_FRAME_RELATED_P (insn) = 1;
-	insn = emit_insn(gen_movhi(gen_rtx_MEM(Pmode, stack_pointer_rtx), gen_rtx_REG(Pmode, PCPU_R6)));
+	insn = emit_insn(gen_movhi(gen_frame_mem(Pmode, stack_pointer_rtx), gen_rtx_REG(Pmode, PCPU_R6)));
 	RTX_FRAME_RELATED_P (insn) = 1;
-	insn = emit_insn(gen_movhi(gen_rtx_MEM(Pmode, gen_rtx_PLUS(Pmode, stack_pointer_rtx, GEN_INT(2))), hard_frame_pointer_rtx));
+	insn = emit_insn(gen_movhi(gen_frame_mem(Pmode, gen_rtx_PLUS(Pmode, stack_pointer_rtx, GEN_INT(2))), hard_frame_pointer_rtx));
 	RTX_FRAME_RELATED_P (insn) = 1;
 	for (regno = 0; regno < FIRST_PSEUDO_REGISTER; regno++) {
 		if (!fixed_regs[regno] && df_regs_ever_live_p (regno) && !call_used_regs[regno]) {
-			insn = emit_insn(gen_movhi(gen_rtx_MEM(Pmode, gen_rtx_PLUS(Pmode, stack_pointer_rtx, GEN_INT(rnpos+=2))), gen_rtx_REG(Pmode, regno)));
+			insn = emit_insn(gen_movhi(gen_frame_mem(Pmode, gen_rtx_PLUS(Pmode, stack_pointer_rtx, GEN_INT(rnpos))), gen_rtx_REG(Pmode, regno)));
+			rnpos += 2;
 	  		RTX_FRAME_RELATED_P (insn) = 1;
 		}
 	}
@@ -237,7 +254,8 @@ void pcpu_expand_epilogue(){
 	RTX_FRAME_RELATED_P (insn) = 1;
 	for (regno = 0; regno < FIRST_PSEUDO_REGISTER; regno++) {
 		if (!fixed_regs[regno] && df_regs_ever_live_p (regno) && !call_used_regs[regno]) {
-			insn = emit_insn(gen_movhi(gen_rtx_REG(Pmode, regno), gen_rtx_MEM(Pmode, gen_rtx_PLUS(Pmode, stack_pointer_rtx, GEN_INT(rnpos+=2)))));
+			insn = emit_insn(gen_movhi(gen_rtx_REG(Pmode, regno), gen_rtx_MEM(Pmode, gen_rtx_PLUS(Pmode, stack_pointer_rtx, GEN_INT(rnpos)))));
+			rnpos += 2;
 	  		RTX_FRAME_RELATED_P (insn) = 1;
 		}
 	}
@@ -249,13 +267,13 @@ void pcpu_expand_epilogue(){
 HOST_WIDE_INT pcpu_initial_elimination_offset (int from, int to){
 	HOST_WIDE_INT offset = 0;
 	pcpu_compute_frame();
-	printf("%d\n", cfun->machine->callee_saved_reg_size);
 	if ((from) == FRAME_POINTER_REGNUM && (to) == HARD_FRAME_POINTER_REGNUM)
-		offset = -cfun->machine->callee_saved_reg_size +2 ; //VERIFY! +2 becasue gcc begins of next addr???
+		offset = -cfun->machine->callee_saved_reg_size+2; //VERIFY! +2 becasue gcc begins of next addr???
 	else if ((from) == ARG_POINTER_REGNUM && (to) == HARD_FRAME_POINTER_REGNUM)
-   		offset = 0x00;
+   		offset = 0;
 	else
 		abort();
+
 	return offset;
 }
 
@@ -269,8 +287,8 @@ static void pcpu_option_override (void) {
 }
 
 
-// #undef  TARGET_PROMOTE_PROTOTYPES
-// #define TARGET_PROMOTE_PROTOTYPES	hook_bool_const_tree_true
+#undef  TARGET_PROMOTE_PROTOTYPES
+#define TARGET_PROMOTE_PROTOTYPES	hook_bool_const_tree_true
 
 #undef TARGET_LEGITIMATE_ADDRESS_P
 #define TARGET_LEGITIMATE_ADDRESS_P pcpu_legitimate_address_p
@@ -291,10 +309,15 @@ static void pcpu_option_override (void) {
 #undef TARGET_FUNCTION_VALUE_REGNO_P
 #define TARGET_FUNCTION_VALUE_REGNO_P pcpu_function_value_regno_p
 
-// #undef  TARGET_PASS_BY_REFERENCE
-// #define TARGET_PASS_BY_REFERENCE pcpu_pass_by_reference
-// #undef  TARGET_MUST_PASS_IN_STACK
-// #define TARGET_MUST_PASS_IN_STACK	must_pass_in_stack_var_size
+#undef  TARGET_PASS_BY_REFERENCE
+#define TARGET_PASS_BY_REFERENCE pcpu_pass_by_reference
+bool
+pcpu_must_pass_in_stack_var_size (machine_mode mode ATTRIBUTE_UNUSED,
+			     const_tree type){
+					 return true;
+				 }
+#undef  TARGET_MUST_PASS_IN_STACK
+#define TARGET_MUST_PASS_IN_STACK	pcpu_must_pass_in_stack_var_size
 
 #undef TARGET_OPTION_OVERRIDE
 #define TARGET_OPTION_OVERRIDE pcpu_option_override
@@ -305,10 +328,8 @@ static void pcpu_option_override (void) {
 
 // #undef TARGET_LRA_P
 // #define TARGET_LRA_P hook_bool_void_false
-// #undef TARGET_FRAME_POINTER_REQUIRED
-// #define TARGET_FRAME_POINTER_REQUIRED hook_bool_void_true
-// #undef  TARGET_MUST_PASS_IN_STACK
-// #define TARGET_MUST_PASS_IN_STACK	must_pass_in_stack_var_size
+#undef TARGET_FRAME_POINTER_REQUIRED
+#define TARGET_FRAME_POINTER_REQUIRED hook_bool_void_true
 
 struct gcc_target targetm = TARGET_INITIALIZER;
 

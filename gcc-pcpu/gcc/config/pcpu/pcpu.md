@@ -6,6 +6,10 @@
   "nop"
 )
 
+;; ----------------------------
+;; MOVES
+;; ----------------------------
+
 (define_expand "movhi"
   [(set (match_operand:HI 0 "general_operand" "")
  	(match_operand:HI 1 "general_operand" ""))]
@@ -28,6 +32,10 @@
   ldo %0, %1, 0"
 )
 
+;; ----------------------------
+;; ARTIHMETIC
+;; ----------------------------
+
 (define_insn "addhi3"
   [(set (match_operand:HI 0 "nonimmediate_operand" "=r,r")
     (plus:HI
@@ -39,13 +47,89 @@
   adi %0, %1, %2"
 )
 
+;; ----------------------------
+;; COMPARE
+;; ----------------------------
+
+(define_constants [(CC_REG 8)])
+
+(define_expand "cbranchhi4"
+  [(set (reg:CC CC_REG)
+        (compare:CC
+         (match_operand:HI 1 "general_operand" "")
+         (match_operand:HI 2 "general_operand" "")))
+   (set (pc)
+        (if_then_else (match_operator 0 "comparison_operator"
+                       [(reg:CC CC_REG) (const_int 0)])
+                      (label_ref (match_operand 3 "" ""))
+                      (pc)))]
+  ""
+  "
+  /* Force the compare operands into registers.  */
+  if (GET_CODE (operands[1]) != REG)
+	operands[1] = force_reg (HImode, operands[1]);
+  if (GET_CODE (operands[2]) != REG && (GET_CODE (operands[2]) != CONST))
+	operands[2] = force_reg (HImode, operands[2]);
+  "
+)
+
+(define_insn "*cmphi"
+  [(set (reg:CC CC_REG)
+	(compare
+	 (match_operand:HI 0 "register_operand" "r,r")
+	 (match_operand:HI 1 "nonmemory_operand"	"r,i")))]
+  ""
+  "@
+  cmp %0, %1
+  cmi %0, %1")
+
+
+;; ----------------------------
+;; CONDITIONAL JUMPS
+;; ----------------------------
+
+(define_code_iterator cond [ne eq lt gt ge le gtu ltu geu leu])
+(define_code_attr CC [(ne "ne") (eq "eq") (lt "lt") 
+		      (gt "gt")  (ge "ge") (le "le") (gtu "gt**aa") (ltu "ca") (geu "ge**az") (leu "ce")])
+
+(define_insn "*b<cond:code>"
+  [(set (pc)
+	(if_then_else (cond (reg:CC CC_REG)
+			    (const_int 0))
+		      (label_ref (match_operand 0 "" ""))
+		      (pc)))]
+  ""
+  "j<CC> %l0"
+)
+
+;; unsigned variants
+
+(define_insn "*bltu"[(set (pc) (if_then_else (cond(reg:CC CC_REG) (const_int 0)) (match_operand 0 "" "") (pc)))] ""
+  "jca %0"
+)
+
+(define_insn "*bleu"[(set (pc) (if_then_else (cond(reg:CC CC_REG) (const_int 0)) (match_operand 0 "" "") (pc)))] ""
+  "jca %0\njeq %0"
+  [(set_attr "length"	"4")]
+)
+
+(define_insn "*bgeu"[(set (pc) (if_then_else (cond(reg:CC CC_REG) (const_int 0)) (match_operand 0 "" "") (pc)))] ""
+  "j**geu %0"
+)
+
+(define_insn "*bgtu"[(set (pc) (if_then_else (cond(reg:CC CC_REG) (const_int 0)) (match_operand 0 "" "") (pc)))] ""
+  "j**gtu %0"
+)
+
+;; ----------------------------
 ;; CALL AND JUMPS
+;; ----------------------------
 
 (define_insn "jump"
-	[(set (pc)
-	(label_ref(match_operand 0 "" "")))]
-	""
-	"jmp %1")
+  [(set (pc)
+	(label_ref (match_operand 0 "" "")))]
+  ""
+  "jmp %l0")
 
 (define_expand "call_value"
   [(set (match_operand 0 "" "")
@@ -59,10 +143,20 @@
 (define_insn "*call_value"
   [(set (match_operand 0 "register_operand" "=r")
 	(call (mem:HI (match_operand:HI
-		       1 "general_operand" "i"))
+		       1 "immediate_operand" "i"))
 	      (match_operand 2 "" "")))]
     ""
     "jal r6, %1"
+)
+
+;;VERIFY
+(define_insn "*call_value_indirect"
+  [(set (match_operand 0 "register_operand" "=r")
+	(call (mem:HI (match_operand:HI
+		       1 "register_operand" "r"))
+	      (match_operand 2 "" "")))]
+  ""
+  "srs %1, 0"
 )
 
 

@@ -37,16 +37,16 @@
    standard C library (unless we are building a shared library) and
    the simulator BSP code.  */
 
-#undef LIB_SPEC
-#define LIB_SPEC "%{!shared:%{!symbolic:-lc}}"
+// #undef LIB_SPEC
+// #define LIB_SPEC "%{!shared:%{!symbolic:-lc}}"
 
-#undef  LINK_SPEC
-#define LINK_SPEC "%{h*} %{v:-V} %{!mel:-EB} %{mel:-EL}\
-		   %{static:-Bstatic} %{shared:-shared} %{symbolic:-Bsymbolic}"
+// #undef  LINK_SPEC
+// #define LINK_SPEC "%{h*} %{v:-V} %{!mel:-EB} %{mel:-EL}\
+// 		   %{static:-Bstatic} %{shared:-shared} %{symbolic:-Bsymbolic}"
 
-#ifndef MULTILIB_DEFAULTS
-#define MULTILIB_DEFAULTS { "meb" }
-#endif
+// #ifndef MULTILIB_DEFAULTS
+// #define MULTILIB_DEFAULTS { "meb" }
+// #endif
 
 /* Layout of Source Language Data Types */
 
@@ -76,7 +76,7 @@
 #define REGISTER_NAMES {	\
   "$r0", "$r1",   \
   "$r2", "$r3", "$r4", "$r5",   \
-  "$r6", "$r7", "V$fp"}
+  "$r6", "$r7", "V$fp", "V$cc"}
 
 #define PCPU_R0     0
 #define PCPU_R1     1 
@@ -87,14 +87,16 @@
 #define PCPU_R6     6
 #define PCPU_R7     7
 
-#define PCPU_VIRT_FP 8
+#define PCPU_VIRT_FP 9
+#define PCPU_VCC 8
 
-#define FIRST_PSEUDO_REGISTER 9
+#define FIRST_PSEUDO_REGISTER 10
 
 enum reg_class
 {
   NO_REGS,
   GENERAL_REGS,
+  CC_REGS,
   ALL_REGS,
   LIM_REG_CLASSES
 };
@@ -102,8 +104,9 @@ enum reg_class
 
 #define REG_CLASS_CONTENTS \
 { { 0x00000000 }, /* Empty */			   \
-  { 0x000000FF },  \
-  { 0x000001FF }  /* All registers */              \
+  { 0x000000FF },  /* GENERAL */ \
+  { 0x00000300}, /* CC */ \
+  { 0x000003FF }  /* All registers */              \
 }
 
 #define N_REG_CLASSES LIM_REG_CLASSES
@@ -111,20 +114,21 @@ enum reg_class
 #define REG_CLASS_NAMES {\
     "NO_REGS", \
     "GENERAL_REGS", \
+    "CC_REGS", \
     "ALL_REGS" }
 
 #define FIXED_REGISTERS     { 0, 0, 0, 0, \
-			      0, 0, 0, 1, 1 }
+			      0, 0, 0, 1, 1, 1 }
 
 #define CALL_USED_REGISTERS { 1, 0, 0, 0, \
-			      0, 1, 1, 1, 1 }
+			      0, 1, 1, 1, 1, 1 }
 
 /* We can't copy to or from our CC register. */
 #define AVOID_CCMODE_COPIES 1
 
 /* A C expression whose value is a register class containing hard
    register REGNO.  */
-#define REGNO_REG_CLASS(R) (GENERAL_REGS )
+#define REGNO_REG_CLASS(R) ((((R != PCPU_VCC) && (R != PCPU_VIRT_FP) )? GENERAL_REGS : CC_REGS))
 
 /* The Overall Framework of an Assembler File */
 

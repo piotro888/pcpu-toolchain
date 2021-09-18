@@ -120,8 +120,8 @@ enum reg_class
 #define FIXED_REGISTERS     { 0, 0, 0, 0, \
 			      0, 0, 0, 1, 1, 1 }
 
-#define CALL_USED_REGISTERS { 1, 0, 0, 0, \
-			      0, 1, 1, 1, 1, 1 }
+#define CALL_USED_REGISTERS { 1, 1, 1, 1, \
+			      0, 1, 1, 1, 1, 1 } //auto save only r4 on calls
 
 /* We can't copy to or from our CC register. */
 #define AVOID_CCMODE_COPIES 1

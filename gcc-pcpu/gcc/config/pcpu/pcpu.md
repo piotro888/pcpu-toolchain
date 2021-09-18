@@ -28,8 +28,8 @@
   "@
   mov %0, %1
   ldi %0, %1
-  sto %1, %0, 0
-  ldo %0, %1, 0"
+  sto %1, %0
+  ldo %0, %1"
 )
 
 ;; ----------------------------
@@ -46,6 +46,91 @@
   add %0, %1, %2
   adi %0, %1, %2"
 )
+(define_insn "subhi3"
+  [(set (match_operand:HI 0 "nonimmediate_operand" "=r")
+    (minus:HI
+    (match_operand:HI 1 "general_operand" "r")
+    (match_operand:HI 2 "general_operand" "r")))]
+  ""
+  "sub %0, %1, %2"
+)
+
+(define_insn "udivhi3"
+  [(set (match_operand:HI 0 "register_operand" "=r")
+	  (udiv:HI
+	   (match_operand:HI 1 "register_operand" "r")
+	   (match_operand:HI 2 "register_operand" "r")))]
+  ""
+  "div %0, %1, %2")
+
+  (define_insn "mulhi3"
+  [(set (match_operand:HI 0 "register_operand" "=r")
+	  (mult:HI
+	   (match_operand:HI 1 "register_operand" "r")
+	   (match_operand:HI 2 "register_operand" "r")))]
+  ""
+  "mul %0, %1, %2")
+
+
+;; ----------------------------
+;; LOGIC
+;; ---------------------------- 
+
+(define_insn "andhi3"
+  [(set (match_operand:HI 0 "nonimmediate_operand" "=r,r")
+    (and:HI
+    (match_operand:HI 1 "general_operand" "r,r")
+    (match_operand:HI 2 "general_operand" "r,i")))]
+  ""
+  "@
+  and %0, %1, %2
+  ani %0, %1, %2"
+)
+
+(define_insn "orhi3"
+  [(set (match_operand:HI 0 "nonimmediate_operand" "=r,r")
+    (ior:HI
+    (match_operand:HI 1 "general_operand" "r,r")
+    (match_operand:HI 2 "general_operand" "r,i")))]
+  ""
+  "@
+  orr %0, %1, %2
+  ori %0, %1, %2"
+)
+
+(define_insn "xorhi3"
+  [(set (match_operand:HI 0 "nonimmediate_operand" "=r,r")
+    (xor:HI
+    (match_operand:HI 1 "general_operand" "r,r")
+    (match_operand:HI 2 "general_operand" "r,i")))]
+  ""
+  "@
+  xor %0, %1, %2
+  xoi %0, %1, %2"
+)
+
+(define_insn "one_cmplhi2"
+  [(set (match_operand:HI 0 "nonimmediate_operand" "=r")
+    (not:HI
+    (match_operand:HI 1 "general_operand" "r")))]
+  ""
+  "not %0, %1"
+)
+
+(define_insn "lshrhi3"
+  [(set (match_operand:HI 0 "register_operand" "=r")
+	(lshiftrt:HI (match_operand:HI 1 "register_operand" "r")
+		     (match_operand:HI 2 "register_operand" "r")))]
+  ""
+  "shr %0, %1, %2")
+
+(define_insn "ashlhi3"
+  [(set (match_operand:HI 0 "register_operand" "=r")
+	(ashift:HI (match_operand:HI 1 "register_operand" "r")
+		     (match_operand:HI 2 "register_operand" "r")))]
+  ""
+  "shl %0, %1, %2")
+
 
 ;; ----------------------------
 ;; COMPARE

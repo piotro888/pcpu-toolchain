@@ -69,12 +69,12 @@ pcpu_print_operand_address (FILE *file, machine_mode, rtx x)
       switch (GET_CODE (XEXP (x, 1)))
 	{
 	case CONST_INT:
-	  fprintf (file, "%ld(%s)", 
-		   INTVAL(XEXP (x, 1)), reg_names[REGNO (XEXP (x, 0))]);
+	  fprintf (file, "(%s), %ld", reg_names[REGNO (XEXP (x, 0))], 
+		   INTVAL(XEXP (x, 1)));
 	  break;
 	case SYMBOL_REF:
+	  fprintf (file, "(%s), ", reg_names[REGNO (XEXP (x, 0))]);
 	  output_addr_const (file, XEXP (x, 1));
-	  fprintf (file, "(%s)", reg_names[REGNO (XEXP (x, 0))]);
 	  break;
 	case CONST:
 	  {
@@ -82,9 +82,10 @@ pcpu_print_operand_address (FILE *file, machine_mode, rtx x)
 	    if (GET_CODE (XEXP (plus, 0)) == SYMBOL_REF 
 		&& CONST_INT_P (XEXP (plus, 1)))
 	      {
-		output_addr_const(file, XEXP (plus, 0));
-		fprintf (file,"+%ld(%s)", INTVAL (XEXP (plus, 1)),
-			 reg_names[REGNO (XEXP (x, 0))]);
+
+		fprintf (file,"(%s), %ld+",
+			 reg_names[REGNO (XEXP (x, 0))] , INTVAL (XEXP (plus, 1)));
+			 		output_addr_const(file, XEXP (plus, 0));
 	      }
 	    else
 	      abort();

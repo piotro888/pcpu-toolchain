@@ -62,18 +62,18 @@ pcpu_print_operand_address (FILE *file, machine_mode, rtx x)
   switch (GET_CODE (x))
     {
     case REG:
-      fprintf (file, "(%s)", reg_names[REGNO (x)]);
+      fprintf (file, "%s", reg_names[REGNO (x)]);
       break;
       
     case PLUS:
       switch (GET_CODE (XEXP (x, 1)))
 	{
 	case CONST_INT:
-	  fprintf (file, "(%s), %ld", reg_names[REGNO (XEXP (x, 0))], 
+	  fprintf (file, "%s, %ld", reg_names[REGNO (XEXP (x, 0))], 
 		   INTVAL(XEXP (x, 1)));
 	  break;
 	case SYMBOL_REF:
-	  fprintf (file, "(%s), ", reg_names[REGNO (XEXP (x, 0))]);
+	  fprintf (file, "%s, ", reg_names[REGNO (XEXP (x, 0))]);
 	  output_addr_const (file, XEXP (x, 1));
 	  break;
 	case CONST:
@@ -83,7 +83,7 @@ pcpu_print_operand_address (FILE *file, machine_mode, rtx x)
 		&& CONST_INT_P (XEXP (plus, 1)))
 	      {
 
-		fprintf (file,"(%s), %ld+",
+		fprintf (file,"%s, %ld+",
 			 reg_names[REGNO (XEXP (x, 0))] , INTVAL (XEXP (plus, 1)));
 			 		output_addr_const(file, XEXP (plus, 0));
 	      }
@@ -260,7 +260,7 @@ void pcpu_expand_epilogue(){
 	  		RTX_FRAME_RELATED_P (insn) = 1;
 		}
 	}
-	
+
 	insn = emit_insn(gen_movhi(hard_frame_pointer_rtx, gen_rtx_MEM(Pmode, gen_rtx_PLUS(Pmode, stack_pointer_rtx, GEN_INT(-2)))));
 	RTX_FRAME_RELATED_P (insn) = 1;
 

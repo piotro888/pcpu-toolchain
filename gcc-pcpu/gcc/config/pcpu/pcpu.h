@@ -74,9 +74,9 @@
 #define WCHAR_TYPE_SIZE BITS_PER_WORD
 
 #define REGISTER_NAMES {	\
-  "$r0", "$r1",   \
-  "$r2", "$r3", "$r4", "$r5",   \
-  "$r6", "$r7", "V$fp", "V$cc"}
+  "r0", "r1",   \
+  "r2", "r3", "r4", "r5",   \
+  "r6", "r7", "Vfp", "Vcc"}
 
 #define PCPU_R0     0
 #define PCPU_R1     1 

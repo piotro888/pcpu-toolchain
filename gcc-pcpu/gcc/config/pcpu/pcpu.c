@@ -27,15 +27,6 @@ static void pcpu_print_operand(FILE *file, rtx x, int code)
 {
 	rtx operand = x;
 
-	switch(code)
-	{
-		case 0:
-			break;
-		default:
-			//LOSE_AND_RETURN("invalid operand modifier lettes", x);
-			break;
-	}
-
 	switch(GET_CODE(operand))
 	{
 		case REG:
@@ -62,7 +53,7 @@ pcpu_print_operand_address (FILE *file, machine_mode, rtx x)
   switch (GET_CODE (x))
     {
     case REG:
-      fprintf (file, "%s", reg_names[REGNO (x)]);
+      fprintf (file, "%s, 0", reg_names[REGNO (x)]);
       break;
       
     case PLUS:

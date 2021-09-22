@@ -32,6 +32,42 @@
   ldo %0, %1"
 )
 
+(define_expand "movqi"
+  [(set (match_operand:QI 0 "general_operand" "")
+ 	(match_operand:QI 1 "general_operand" ""))]
+  ""
+  "{
+    if(GET_CODE(operands[0]) == MEM) {
+      operands[1] = force_reg (QImode, operands[1]);
+    }
+  }"
+)
+
+(define_insn "*movqi"
+  [(set (match_operand:QI 0 "nonimmediate_operand" "=r,r,m,r")
+    (match_operand:QI 1 "general_operand" "r,i,r,m"))]
+  ""
+  "@
+  mov %0, %1
+  ldi %0, %1
+  sto**8 %1, %0
+  ldo**8 %0, %1"
+)
+
+(define_insn "zero_extendqihi2"
+  [(set (match_operand:HI 0 "register_operand" "=r")
+	(zero_extend:HI (match_operand:QI 1 "nonimmediate_operand" "0")))]
+  ""
+  "ani %0, 0xFF"
+  [(set_attr "length" "2")])
+
+(define_insn "extendqihi2"
+  [(set (match_operand:HI 0 "register_operand" "=r")
+	(sign_extend:HI (match_operand:QI 1 "nonimmediate_operand" "0")))]
+  ""
+  "gcc**extsgn %0"
+  [(set_attr "length" "2")])
+
 ;; ----------------------------
 ;; ARTIHMETIC
 ;; ----------------------------
@@ -124,6 +160,13 @@
   ""
   "shr %0, %1, %2")
 
+(define_insn "ashrhi3"
+  [(set (match_operand:HI 0 "register_operand" "=r")
+	(ashiftrt:HI (match_operand:HI 1 "register_operand" "r")
+		     (match_operand:HI 2 "immediate_operand" "i")))]
+  ""
+  "a**shr %0, %1, %2")
+
 (define_insn "ashlhi3"
   [(set (match_operand:HI 0 "register_operand" "=r")
 	(ashift:HI (match_operand:HI 1 "register_operand" "r")
@@ -175,7 +218,7 @@
 
 (define_code_iterator cond [ne eq lt gt ge le gtu ltu geu leu])
 (define_code_attr CC [(ne "ne") (eq "eq") (lt "lt") 
-		      (gt "gt")  (ge "ge") (le "le") (gtu "gt**aa") (ltu "ca") (geu "ge**az") (leu "ce")])
+		      (gt "gt")  (ge "ge") (le "le") (gtu "gt**aa") (ltu "ca") (geu "ge**az") (leu "**ce")])
 
 (define_insn "*b<cond:code>"
   [(set (pc)

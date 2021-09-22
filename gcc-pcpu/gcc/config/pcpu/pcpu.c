@@ -68,31 +68,31 @@ pcpu_print_operand_address (FILE *file, machine_mode, rtx x)
     case PLUS:
       switch (GET_CODE (XEXP (x, 1)))
 	{
-	case CONST_INT:
-	  fprintf (file, "%s, %ld", reg_names[REGNO (XEXP (x, 0))], 
-		   INTVAL(XEXP (x, 1)));
-	  break;
-	case SYMBOL_REF:
-	  fprintf (file, "%s, ", reg_names[REGNO (XEXP (x, 0))]);
-	  output_addr_const (file, XEXP (x, 1));
-	  break;
-	case CONST:
-	  {
-	    rtx plus = XEXP (XEXP (x, 1), 0);
-	    if (GET_CODE (XEXP (plus, 0)) == SYMBOL_REF 
-		&& CONST_INT_P (XEXP (plus, 1)))
-	      {
+		case CONST_INT:
+		fprintf (file, "%s, %ld", reg_names[REGNO (XEXP (x, 0))], 
+			INTVAL(XEXP (x, 1)));
+		break;
+		case SYMBOL_REF:
+		fprintf (file, "%s, ", reg_names[REGNO (XEXP (x, 0))]);
+		output_addr_const (file, XEXP (x, 1));
+		break;
+		case CONST:
+		{
+			rtx plus = XEXP (XEXP (x, 1), 0);
+			if (GET_CODE (XEXP (plus, 0)) == SYMBOL_REF 
+			&& CONST_INT_P (XEXP (plus, 1)))
+			{
 
-		fprintf (file,"%s, %ld+",
-			 reg_names[REGNO (XEXP (x, 0))] , INTVAL (XEXP (plus, 1)));
-			 		output_addr_const(file, XEXP (plus, 0));
-	      }
-	    else
-	      abort();
-	  }
-	  break;
-	default:
-	  abort();
+			fprintf (file,"%s, %ld+",
+				reg_names[REGNO (XEXP (x, 0))] , INTVAL (XEXP (plus, 1)));
+						output_addr_const(file, XEXP (plus, 0));
+			}
+			else
+			abort();
+		}
+		break;
+		default:
+		abort();
 	}
       break;
 
@@ -329,6 +329,19 @@ static void pcpu_option_override (void) {
 
 #undef TARGET_FRAME_POINTER_REQUIRED
 #define TARGET_FRAME_POINTER_REQUIRED hook_bool_void_true
+
+static bool
+pcpu_use_by_pieces_infrastructure_p (unsigned HOST_WIDE_INT size,
+                                    unsigned int align ATTRIBUTE_UNUSED,
+                                    enum by_pieces_operation op,
+                                    bool speed_p){ return true; //always emit load for internal copy dont use memcpy
+									}
+
+#undef  TARGET_USE_BY_PIECES_INFRASTRUCTURE_P
+#define  TARGET_USE_BY_PIECES_INFRASTRUCTURE_P pcpu_use_by_pieces_infrastructure_p
+
+#undef  TARGET_CONSTANT_ALIGNMENT
+#define TARGET_CONSTANT_ALIGNMENT constant_alignment_word_strings
 
 struct gcc_target targetm = TARGET_INITIALIZER;
 

@@ -59,7 +59,7 @@
 #define DOUBLE_TYPE_SIZE 64
 #define LONG_DOUBLE_TYPE_SIZE 64
 
-#define DEFAULT_SIGNED_CHAR 1
+#define DEFAULT_SIGNED_CHAR 0
 
 #undef  SIZE_TYPE
 #define SIZE_TYPE "unsigned int"
@@ -132,7 +132,7 @@ enum reg_class
 
 /* The Overall Framework of an Assembler File */
 
-#define ASM_COMMENT_START "#"
+#define ASM_COMMENT_START ";"
 #define ASM_APP_ON ""
 #define ASM_APP_OFF ""
 
@@ -272,10 +272,10 @@ enum reg_class
 #define MAX_FIXED_MODE_SIZE 16
 
 /* Make arrays of chars word-aligned for the same reasons.  */
-// #define DATA_ALIGNMENT(TYPE, ALIGN)		\
-//   (TREE_CODE (TYPE) == ARRAY_TYPE		\
-//    && TYPE_MODE (TREE_TYPE (TYPE)) == QImode	\
-//    && (ALIGN) < FASTEST_ALIGNMENT ? FASTEST_ALIGNMENT : (ALIGN))
+#define DATA_ALIGNMENT(TYPE, ALIGN)		\
+  (TREE_CODE (TYPE) == ARRAY_TYPE		\
+   && TYPE_MODE (TREE_TYPE (TYPE)) == QImode	\
+   && (ALIGN) < FASTEST_ALIGNMENT ? FASTEST_ALIGNMENT : (ALIGN))
      
 /* Set this nonzero if move instructions will actually fail to work
    when given unaligned data.  */

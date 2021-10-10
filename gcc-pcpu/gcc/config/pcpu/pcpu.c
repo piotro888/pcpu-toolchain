@@ -16,6 +16,7 @@
 #include "calls.h"
 #include "builtins.h"
 #include "df.h"
+#include "expr.h"
 #include "calls.h"
 
 /* This file should be included last.  */
@@ -161,6 +162,47 @@ static bool pcpu_function_value_regno_p (const unsigned int regno) {
   //return value in reg 0
   return (regno == PCPU_R0);
 }
+
+/* Worker function for TARGET_SETUP_INCOMING_VARARGS.  */
+
+static void pcpu_setup_incoming_varargs (cumulative_args_t cum_v,machine_mode mode ATTRIBUTE_UNUSED,tree type ATTRIBUTE_UNUSED,int *pretend_size, int no_rtl)
+{	
+	// push VARARGS in registers to stack so varargs implemenation is happy
+	CUMULATIVE_ARGS *cum = get_cumulative_args (cum_v);
+	int regno;
+	int regs = 4 - *cum;
+	
+	//offset for sp access
+	*pretend_size = regs < 0 ? 0 : GET_MODE_SIZE (HImode) * regs;
+	//printf("PS:%d.CUM:%d", *pretend_size, *cum);
+	
+	if (no_rtl)
+		return;
+	
+	//push into reserverd stack space (.h REG_PARM_STACK_SPACE)
+	for (regno = *cum; regno < 4; regno++)
+		{
+		rtx reg = gen_rtx_REG (HImode, regno);
+		rtx slot = gen_rtx_PLUS (Pmode,
+					gen_rtx_REG (HImode, ARG_POINTER_REGNUM),
+					GEN_INT (UNITS_PER_WORD *  (1+regno))); //adresses above frame pointer (old sp)
+		
+		emit_move_insn (gen_rtx_MEM (HImode, slot), reg);
+		}
+	
+	// Just push evertyhing for pcpu-vaarg implementation
+	// arguments are pushed at end of sp.
+	// int regno;
+	// for (regno = 0; regno <= 4; regno++) {
+	// 	rtx reg = gen_rtx_REG (HImode, regno);
+	// 	rtx slot = gen_rtx_PLUS (Pmode,
+	// 				gen_rtx_REG (HImode, ARG_POINTER_REGNUM),
+	// 				GEN_INT (-UNITS_PER_WORD *  (3+regno))); //sp,and others seved before??? THIS IS WRONG this should execute before prologue!
+		
+	// 	emit_move_insn (gen_rtx_MEM (HImode, slot), reg);
+	// }
+}
+
 
 struct GTY(()) machine_function
 {
@@ -333,6 +375,9 @@ pcpu_use_by_pieces_infrastructure_p (unsigned HOST_WIDE_INT size,
 
 #undef  TARGET_CONSTANT_ALIGNMENT
 #define TARGET_CONSTANT_ALIGNMENT constant_alignment_word_strings
+
+#undef TARGET_SETUP_INCOMING_VARARGS
+#define TARGET_SETUP_INCOMING_VARARGS pcpu_setup_incoming_varargs
 
 struct gcc_target targetm = TARGET_INITIALIZER;
 

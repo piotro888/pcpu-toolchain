@@ -122,7 +122,7 @@
   ani %0, %1, %2"
 )
 
-(define_insn "orhi3"
+(define_insn "iorhi3"
   [(set (match_operand:HI 0 "nonimmediate_operand" "=r,r")
     (ior:HI
     (match_operand:HI 1 "general_operand" "r,r")
@@ -296,10 +296,12 @@
 
 (define_insn "*call"
   [(call (mem:HI (match_operand:HI
-		  0 "nonmemory_operand" "i"))
+		  0 "nonmemory_operand" "i,r"))
 	 (match_operand 1 "" ""))]
     ""
-    "jal r6, %0"
+    "@
+    jal r6, %0
+    srs %0, 0"
 )
 
 

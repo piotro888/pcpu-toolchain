@@ -265,34 +265,34 @@ void pcpu_expand_prologue(){
 	insn = emit_insn(gen_movhi(gen_frame_mem(Pmode, gen_rtx_PLUS(Pmode, stack_pointer_rtx, GEN_INT(-2))), hard_frame_pointer_rtx));
 	RTX_FRAME_RELATED_P (insn) = 1;
 	
-	for (regno = 0; regno < FIRST_PSEUDO_REGISTER; regno++) {
-		if (!fixed_regs[regno] && df_regs_ever_live_p (regno) && !call_used_regs[regno]) {
-			insn = emit_insn(gen_movhi(gen_frame_mem(Pmode, gen_rtx_PLUS(Pmode, stack_pointer_rtx, GEN_INT(-rnpos))), gen_rtx_REG(Pmode, regno)));
-			rnpos += 2;
-	  		RTX_FRAME_RELATED_P (insn) = 1;
-		}
-	}
-
 	insn = emit_insn(gen_movhi(hard_frame_pointer_rtx, stack_pointer_rtx));
 	RTX_FRAME_RELATED_P (insn) = 1;
 
 	insn = emit_insn(gen_addhi3(stack_pointer_rtx, stack_pointer_rtx, GEN_INT(-cfun->machine->size_for_adjusting_sp)));
 	RTX_FRAME_RELATED_P (insn) = 1;
+	
+	for (regno = 0; regno < FIRST_PSEUDO_REGISTER; regno++) {
+		if (!fixed_regs[regno] && df_regs_ever_live_p (regno) && !call_used_regs[regno]) {
+			insn = emit_insn(gen_movhi(gen_frame_mem(Pmode, gen_rtx_PLUS(Pmode, hard_frame_pointer_rtx, GEN_INT(rnpos))), gen_rtx_REG(Pmode, regno)));
+			rnpos += 2;
+	  		RTX_FRAME_RELATED_P (insn) = 1;
+		}
+	}
 }
 
 void pcpu_expand_epilogue(){
 	int regno, rnpos=4;
 	rtx insn;
-
-	emit_insn(gen_movhi(stack_pointer_rtx, hard_frame_pointer_rtx));
     
 	for (regno = 0; regno < FIRST_PSEUDO_REGISTER; regno++) {
 		if (!fixed_regs[regno] && df_regs_ever_live_p (regno) && !call_used_regs[regno]) {
-			insn = emit_insn(gen_movhi(gen_rtx_REG(Pmode, regno), gen_rtx_MEM(Pmode, gen_rtx_PLUS(Pmode, stack_pointer_rtx, GEN_INT(-rnpos)))));
+			insn = emit_insn(gen_movhi(gen_rtx_REG(Pmode, regno), gen_rtx_MEM(Pmode, gen_rtx_PLUS(Pmode, hard_frame_pointer_rtx, GEN_INT(rnpos)))));
 			rnpos += 2;
 	  		RTX_FRAME_RELATED_P (insn) = 1;
 		}
 	}
+
+	emit_insn(gen_movhi(stack_pointer_rtx, hard_frame_pointer_rtx));
 
 	insn = emit_insn(gen_movhi(hard_frame_pointer_rtx, gen_rtx_MEM(Pmode, gen_rtx_PLUS(Pmode, stack_pointer_rtx, GEN_INT(-2)))));
 	RTX_FRAME_RELATED_P (insn) = 1;

@@ -277,14 +277,14 @@
     "jal r6, %1"
 )
 
-;;VERIFY
 (define_insn "*call_value_indirect"
   [(set (match_operand 0 "register_operand" "=r")
 	(call (mem:HI (match_operand:HI
 		       1 "register_operand" "r"))
 	      (match_operand 2 "" "")))]
   ""
-  "srs %1, 0"
+  "srl r6, 0\nadi r6, r6, 2\nsrs %1, 0"
+  [(set_attr "length"	"6")]
 )
 
 
@@ -301,7 +301,7 @@
     ""
     "@
     jal r6, %0
-    srs %0, 0"
+    srl r6, 0\nadi r6, r6, 2\nsrs %0, 0"
 )
 
 

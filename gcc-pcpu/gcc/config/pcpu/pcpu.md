@@ -163,7 +163,8 @@
   [(set (match_operand:HI 0 "register_operand" "=r")
 	(ashiftrt:HI (match_operand:HI 1 "register_operand" "0")
 		     (match_operand:HI 2 "immediate_operand" "i")))
-         (clobber (const_int 4))]
+  (clobber (reg:HI 4))
+  (use (reg:HI 4))]
   ""
   "a**shr %0, %2")
 

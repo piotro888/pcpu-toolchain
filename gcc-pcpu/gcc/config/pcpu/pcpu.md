@@ -149,7 +149,7 @@
     (not:HI
     (match_operand:HI 1 "general_operand" "r")))]
   ""
-  "not %0, %1"
+  "xoi %0, %1, 0xFFFF"
 )
 
 (define_insn "lshrhi3"

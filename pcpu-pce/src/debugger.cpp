@@ -1,5 +1,6 @@
 #include "debbuger.h"
 #include <iostream>
+#include <fstream>
 #include <signal.h>
 
 using namespace std;
@@ -121,10 +122,14 @@ void Debugger::pretty_command(unsigned int instr) {
         else if (cond_code == 0x5) cout<<"jle";
         else if (cond_code == 0x6) cout<<"jge";
         else if (cond_code == 0x7) cout<<"jne";
-        cout<<" 0x"<<hex<<ia;
+        cout<<" 0x"<<hex<<ia<<" (";
+        pretty_prog_addr(ia);
+        cout<<")";
     
     } else if (opcode == 0xF){
-        cout<<"jal r"<<fo<<", 0x"<<hex<<ia; // TODO: Resolve ia
+        cout<<"jal r"<<fo<<", 0x"<<hex<<ia<<" (";
+        pretty_prog_addr(ia);
+        cout<<")";
     } else if (opcode == 0x10) {
         cout<<"srl r"<<fo<<", ";
         if(ia == 0) {
@@ -167,9 +172,31 @@ void Debugger::pretty_command(unsigned int instr) {
 }
 
 void Debugger::dump_state() {
-    cout<<"pc: 0x"<<hex<<cpu->state.pc<<' '; // Resolve pc
+    cout<<"pc: 0x"<<hex<<cpu->state.pc<<" (";
+    pretty_prog_addr(cpu->state.pc); cout<<") ";
     for(int i=0; i<8; i++){
         cout<<"r"<<i<<": "<<"0x"<<hex<<cpu->state.r[i]<<' ';
     }
     cout<<"\n";
+}
+
+void Debugger::pretty_prog_addr(unsigned int addr) {
+    auto it = code_symbols.lower_bound(addr);
+    if(it->first != addr)
+        it--;
+    cout<<it->second<<"+0x"<<hex<<addr-(it->first);
+}
+
+void Debugger::loadMemMap(ifstream& file) {
+    string ln;
+    while(file>>ln) {
+        if(ln == "-p")
+            break;
+        
+        int addr;
+        file>>addr;
+        if((ln[0] == 'c' && ln[1] == 'l'))
+            continue; // dont store temp labels
+        code_symbols[addr] = ln;
+    }
 }

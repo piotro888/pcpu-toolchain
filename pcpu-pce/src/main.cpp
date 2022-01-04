@@ -6,9 +6,9 @@
 #include "debbuger.h"
 
 int main(int argc, char* argv[]) {
-    if(argc != 2) {
+    if(argc != 3) {
         std::cerr<<"Missing arguments!";
-        std::cout<<"Usage: pce [pbl kernel file]";
+        std::cout<<"Usage: pce [pbl kernel file] [memory map file]";
         return 1;
     }
 
@@ -24,6 +24,9 @@ int main(int argc, char* argv[]) {
     file.close();
 
     Debugger dbg(&cpu);
+    file.open(argv[2]);
+    dbg.loadMemMap(file);
+    file.close();
 
     vga.init();
     

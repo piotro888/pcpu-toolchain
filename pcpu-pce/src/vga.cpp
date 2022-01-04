@@ -53,13 +53,13 @@ void VGA::redraw() {
 void VGA::write(uint16_t addr, uint16_t data) {
     int col = addr%106;
     int row = addr/106;
-    
-    
-    if((data&0xFF) < 31) //sfml crashes
+
+    if(row >= 48)
         return;
 
     std::string s = "";
-    s += (char) (data&0xFF);
+    if((data&0xFF) > 31 && (data&0xFF) != 0xFF) // sfml crashes
+        s += (char) (data&0xFF);
     
     text_fg[row][col].setString(s);
     data >>= 8;

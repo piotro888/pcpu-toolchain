@@ -16,9 +16,9 @@ void CPU::execute() {
     } else if (opcode == 0x1) {
         state.r[tg] = state.r[fo];
     } else if (opcode == 0x2) {
-        state.r[tg] = ram[ia];
+        state.r[tg] = memRead(ia);
     } else if (opcode == 0x3) {
-        state.r[tg] = ram[state.r[fo]+ia];
+        state.r[tg] = memRead(state.r[fo]+ia);
     } else if (opcode == 0x4) {
         state.r[tg] = ia;
     } else if (opcode == 0x5) {
@@ -111,7 +111,20 @@ void CPU::memWrite(unsigned short address, unsigned short data) {
         ram[address] = data;
     } else if (address >= 0x1000 && address < 0x4c00) {
         periph_vga->write(address-0x1000, data);
+    } else if (address == 0x4) {
+        periph_sd->spi4write(data);
     }
+}
+
+unsigned short CPU::memRead(unsigned short address) {
+    if(address >= 0x4c00) {
+        return ram[address];
+    } else if (address >= 0x1000 && address < 0x4c00) {
+        return 0;
+    } else if (address == 0x4) {
+        return periph_sd->spi4read();
+    }
+    return 0;
 }
 
 void CPU::memWriteProgram(unsigned short address, unsigned int data) {

@@ -6,20 +6,21 @@
 #include "debbuger.h"
 
 int main(int argc, char* argv[]) {
-    if(argc != 3) {
+    if(argc != 4) {
         std::cerr<<"Missing arguments!";
-        std::cout<<"Usage: pce [pbl kernel file] [memory map file]";
+        std::cout<<"Usage: pce [pbl kernel file] [memory map file] [iso file]\n";
         return 1;
     }
 
     std::ifstream file;
-    file.open(argv[1]);
     
     VGA vga;
+    SD sd(argv[3]);
 
-    CPU cpu(&vga);
+    CPU cpu(&vga, &sd);
 
     Loader ld;
+    file.open(argv[1]);
     ld.loadPBL(file, cpu);
     file.close();
 

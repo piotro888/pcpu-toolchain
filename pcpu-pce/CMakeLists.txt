@@ -11,6 +11,7 @@ set(sources ${sources}
     src/core.cpp
     src/loader.cpp
     src/debugger.cpp
+    src/sd.cpp
 )
 
 add_executable(pce ${sources})

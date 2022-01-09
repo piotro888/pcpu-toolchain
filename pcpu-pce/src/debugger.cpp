@@ -131,19 +131,25 @@ void Debugger::pretty_command(unsigned int instr) {
         pretty_prog_addr(ia);
         cout<<")";
     } else if (opcode == 0x10) {
-        cout<<"srl r"<<fo<<", ";
-        if(ia == 0) {
+        cout<<"srl r"<<tg<<", ";
+        if(ia == 0)
             cout<<"pc";
-        } else {
+        else if(ia == 1)
+            cout<<"control";
+        else if(ia == 2)
+            cout<<"jtr";
+        else
             cout<<"unknown";
-        }
     } else if (opcode == 0x11) {
         cout<<"srs r"<<fo<<", ";
-        if(ia == 0) {
+        if(ia == 0)
             cout<<"pc";
-        } else {
+        else if(ia == 1)
+            cout<<"control";
+        else if(ia == 2)
+            cout<<"jtr";
+        else
             cout<<"unknown";
-        }
     } else if (opcode == 0x13){
         cout<<"and r"<<tg<<", r"<<fo<<", r"<<so;
     } else if (opcode == 0x14){

@@ -7,6 +7,9 @@ struct cpu_state {
         unsigned short r[8] = {0,0,0,0,0,0,0,0};
         unsigned short pc = 0;
         int state_result = 0;
+
+        int sr1_control = 1;
+        int sr2_jtr = 0, sr2_jtr_buff = 0;
 };
 
 class CPU {
@@ -28,3 +31,8 @@ private:
     VGA* periph_vga;
     SD* periph_sd;
 };
+
+#define SR1_SUP 1
+#define SR1_IMO 2
+#define SR1_IRQ 4
+#define SR1_MEMPAGE 8

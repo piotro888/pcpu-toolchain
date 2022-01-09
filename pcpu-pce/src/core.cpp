@@ -60,16 +60,25 @@ void CPU::execute() {
             (cond_code == 0x7 && (state.state_result != 0)) ) {
             state.pc = ia;
         }
+        state.sr2_jtr = state.sr2_jtr_buff;
     } else if (opcode == 0xF) {
         state.r[tg] = state.pc;
         state.pc = ia;
-
     } else if (opcode == 0x10) {
         if(ia == 0)
             state.r[tg] = state.pc+1;
+        else if(ia == 1)
+            state.r[tg] = state.sr1_control;
+        else if(ia == 2)
+            state.r[tg] = state.sr2_jtr;
     } else if (opcode == 0x11) {
-        if(ia == 0) 
+        if(ia == 0) {
             state.pc = state.r[fo];
+            state.sr2_jtr = state.sr2_jtr_buff;
+        } else if(ia == 1 && (state.sr1_control & SR1_SUP))
+            state.sr1_control = state.r[fo];
+        else if(ia == 2)
+            state.sr2_jtr_buff = state.r[fo];
     } else if (opcode == 0x13) {
         state.state_result = state.r[fo] & state.r[so];
         state.r[tg] = state.r[fo] & state.r[so];
@@ -107,12 +116,18 @@ void CPU::execute() {
 }
 
 void CPU::memWrite(unsigned short address, unsigned short data) {
-    if(address >= 0x4c00) {
-        ram[address] = data;
-    } else if (address >= 0x1000 && address < 0x4c00) {
-        periph_vga->write(address-0x1000, data);
-    } else if (address == 0x4) {
-        periph_sd->spi4write(data);
+    if(!(state.sr1_control & SR1_IMO)) { 
+        if(address >= 0x4c00) {
+            ram[address] = data;
+        } else if (address >= 0x1000 && address < 0x4c00) {
+            periph_vga->write(address-0x1000, data);
+        } else if (address == 0x4) {
+            periph_sd->spi4write(data);
+        }
+    } else {
+        cout<<"ROM WRITE!"<<hex<<address<<" "<<data;
+        rom[(address>>1)] &= (address & 1) ? 0xFFFF : 0xFFFF0000;
+        rom[(address>>1)] |= (address & 1) ? (data<<16) : data;
     }
 }
 

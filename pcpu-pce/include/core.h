@@ -1,5 +1,8 @@
 #pragma once
 
+#ifndef CORE_H
+#define CORE_H
+
 #include "vga.h"
 #include "sd.h"
 
@@ -12,6 +15,10 @@ struct cpu_state {
         int sr2_jtr = 0, sr2_jtr_buff = 0;
 };
 
+const static int RAM_SIZE = (1<<20);
+extern unsigned short ram[RAM_SIZE];
+extern unsigned int rom[RAM_SIZE];
+
 class CPU {
 public:
     CPU(VGA* vga, SD* sd) : periph_vga(vga), periph_sd(sd) {}
@@ -22,11 +29,8 @@ public:
     unsigned short memRead(unsigned short address);
     void memWriteProgram(unsigned short address, unsigned int data);
 
-    
-
-    const static int RAM_SIZE = 65536;
-    unsigned short ram[RAM_SIZE];
-    unsigned int rom[RAM_SIZE];
+    unsigned short page_ram[16];
+    unsigned short page_rom[16];
 private:
     VGA* periph_vga;
     SD* periph_sd;
@@ -36,3 +40,5 @@ private:
 #define SR1_IMO 2
 #define SR1_IRQ 4
 #define SR1_MEMPAGE 8
+
+#endif

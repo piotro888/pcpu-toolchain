@@ -1,10 +1,19 @@
-#include <core.h>
+#include "core.h"
 #include <iostream>
 
 using namespace std;
 
+unsigned short ram[RAM_SIZE];
+unsigned int rom[RAM_SIZE];
+
 void CPU::execute() {
-    unsigned int instr = rom[state.pc];
+    unsigned int pc_addr = state.pc;
+    
+    if(state.sr2_jtr & 0x2)
+        pc_addr = (page_rom[(state.pc>>12)]<<12) | (state.pc & 0x0FFF);
+    
+    unsigned int instr = rom[pc_addr];
+
     int opcode = instr & 0x7F;
     short ia = instr>>16;
     int tg = (instr>>7)&0b111;
@@ -79,6 +88,10 @@ void CPU::execute() {
             state.sr1_control = state.r[fo];
         else if(ia == 2)
             state.sr2_jtr_buff = state.r[fo];
+        else if(ia >= 0x10 && ia < 0x20)
+            page_ram[ia-0x10] = state.r[fo];
+        else if(ia >= 0x20 && ia < 0x30)
+            page_rom[ia-0x20] = state.r[fo];
     } else if (opcode == 0x13) {
         state.state_result = state.r[fo] & state.r[so];
         state.r[tg] = state.r[fo] & state.r[so];
@@ -115,7 +128,10 @@ void CPU::execute() {
     }
 }
 
-void CPU::memWrite(unsigned short address, unsigned short data) {
+void CPU::memWrite(unsigned short address_r, unsigned short data) {
+    unsigned int address = address_r;
+    if(state.sr1_control & SR1_MEMPAGE)
+        address = (page_ram[(address_r>>12)]<<12) | (address_r & 0x0FFF);
     if(!(state.sr1_control & SR1_IMO)) { 
         if(address >= 0x4c00) {
             ram[address] = data;
@@ -125,7 +141,6 @@ void CPU::memWrite(unsigned short address, unsigned short data) {
             periph_sd->spi4write(data);
         }
     } else {
-        cout<<"ROM WRITE!"<<hex<<address<<" "<<data;
         rom[(address>>1)] &= (address & 1) ? 0xFFFF : 0xFFFF0000;
         rom[(address>>1)] |= (address & 1) ? (data<<16) : data;
     }

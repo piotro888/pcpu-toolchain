@@ -12,15 +12,19 @@ Debugger::Debugger(CPU* _cpu) : cpu(_cpu) {
 }
 
 void Debugger::interactive() {
+    unsigned int pc = (cpu->state.sr2_jtr & 0x2) ?  
+                      (cpu->page_rom[(cpu->state.pc>>12)]<<12) | (cpu->state.pc & 0x0FFF) :
+                      cpu->state.pc;
+    
     if(mode == RUN) {
         if(breakpoints.count(cpu->state.pc)) {
             mode = STEP;
-            cout<<"paused at breakpoint 0x"<<hex<<cpu->state.pc<<"\n";
+            cout<<"paused at breakpoint 0x"<<hex<<pc<<"\n";
         }
 
         if(state_clock.getElapsedTime().asMilliseconds() > 1000) {
             dump_state();
-            pretty_command(cpu->rom[cpu->state.pc]);
+            pretty_command(rom[pc]);
             cout<<'\n';
             state_clock.restart();
         }
@@ -28,7 +32,7 @@ void Debugger::interactive() {
 
     if(mode != RUN) {
         dump_state();
-        pretty_command(cpu->rom[cpu->state.pc]);
+        pretty_command(rom[pc]);
         cout<<'\n';
         while(true) {
             cout<<"> ";
@@ -38,7 +42,7 @@ void Debugger::interactive() {
             if(inp[0] == 'h' || inp[0] == '?') {
                 cout<<help<<'\n';
             } else if (inp[0] == 'c') {
-                cout<<"continue execution from pc 0x"<<hex<<cpu->state.pc<<'\n';
+                cout<<"continue execution from pc 0x"<<hex<<pc<<'\n';
                 mode = RUN;
                 break;
             } else if(inp[0] == 's') {
@@ -58,9 +62,9 @@ void Debugger::interactive() {
                 cin>>addr;
                 int iadr = stoul(addr, 0, 0);
                 for(int i=0; i<8; i++) {
-                    cout<<hex<<"0x"<<iadr+i<<": "<<"0x"<<cpu->ram[iadr+i];
-                    if(cpu->ram[iadr+i] >= 0x20 && cpu->ram[iadr+i] <= 0x7F)  
-                        cout<<" ("<<(char)cpu->ram[iadr+i]<<")";
+                    cout<<hex<<"0x"<<iadr+i<<": "<<"0x"<<ram[iadr+i];
+                    if(ram[iadr+i] >= 0x20 && ram[iadr+i] <= 0x7F)  
+                        cout<<" ("<<(char)ram[iadr+i]<<")";
                     cout<<'\n';
                 }
             } else if(inp[0] == 'p') {
@@ -68,8 +72,8 @@ void Debugger::interactive() {
                 cin>>addr;
                 int iadr = stoul(addr, 0, 0);
                 for(int i=0; i<16; i++) {
-                    cout<<hex<<"0x"<<iadr+i<<": "<<"0x"<<cpu->rom[iadr+i]<<" (";
-                    pretty_command(cpu->rom[iadr+i]);
+                    cout<<hex<<"0x"<<iadr+i<<": "<<"0x"<<rom[iadr+i]<<" (";
+                    pretty_command(rom[iadr+i]);
                     cout<<")\n";
                 }
             }
@@ -178,8 +182,11 @@ void Debugger::pretty_command(unsigned int instr) {
 }
 
 void Debugger::dump_state() {
-    cout<<"pc: 0x"<<hex<<cpu->state.pc<<" (";
-    pretty_prog_addr(cpu->state.pc); cout<<") ";
+    unsigned int pc = (cpu->state.sr2_jtr & 0x2) ?  
+                      (cpu->page_rom[(cpu->state.pc>>12)]<<12) | (cpu->state.pc & 0x0FFF) :
+                      cpu->state.pc;
+    cout<<"pc: 0x"<<hex<<pc<<" (";
+    pretty_prog_addr(pc); cout<<") ";
     for(int i=0; i<8; i++){
         cout<<"r"<<i<<": "<<"0x"<<hex<<cpu->state.r[i]<<' ';
     }

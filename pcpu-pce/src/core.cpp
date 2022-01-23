@@ -71,18 +71,18 @@ void CPU::execute() {
         }
         state.sr2_jtr = state.sr2_jtr_buff;
     } else if (opcode == 0xF) {
-        state.r[tg] = state.pc;
+        state.r[tg] = state.pc - 1;
         state.pc = ia;
     } else if (opcode == 0x10) {
         if(ia == 0)
-            state.r[tg] = state.pc+1;
+            state.r[tg] = state.pc - 1;
         else if(ia == 1)
             state.r[tg] = state.sr1_control;
         else if(ia == 2)
             state.r[tg] = state.sr2_jtr;
     } else if (opcode == 0x11) {
         if(ia == 0) {
-            state.pc = state.r[fo];
+            state.pc = state.r[fo] + 1;
             state.sr2_jtr = state.sr2_jtr_buff;
         } else if(ia == 1 && (state.sr1_control & SR1_SUP))
             state.sr1_control = state.r[fo];

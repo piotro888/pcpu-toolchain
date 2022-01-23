@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.13)
 project(PCPUEMU)
 
-set(CMAKE_CXX_FLAGS "-Wall -Wextra -O2 -g")
+set(CMAKE_CXX_FLAGS "-Wall -Wextra -O2 -g -lpthread")
 
 include_directories(include)
 

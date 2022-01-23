@@ -9,75 +9,90 @@ const string help = "Commands:\nh - help\nc - continue\ns - step\nd - step over\
 
 Debugger::Debugger(CPU* _cpu) : cpu(_cpu) {
     mode = STEP; // find a way to non blocking io or signal to switch to step from run
+    step_completed = true;
+}
+
+void Debugger::threadLoop() {
+    for(;;)
+        interactive();
+}
+
+inline unsigned int Debugger::get_real_pc() {
+    return (cpu->state.sr2_jtr & 0x2) ?  
+                (cpu->page_rom[(cpu->state.pc>>12)]<<12) | (cpu->state.pc & 0x0FFF) :
+                 cpu->state.pc;
 }
 
 void Debugger::interactive() {
-    unsigned int pc = (cpu->state.sr2_jtr & 0x2) ?  
-                      (cpu->page_rom[(cpu->state.pc>>12)]<<12) | (cpu->state.pc & 0x0FFF) :
-                      cpu->state.pc;
+    unsigned int pc = get_real_pc();
     
-    if(mode == RUN) {
+    if(mode == RUN || mode == STEP_OVER) {
         if(breakpoints.count(cpu->state.pc)) {
             mode = STEP;
             cout<<"paused at breakpoint 0x"<<hex<<pc<<"\n";
         }
-
-        if(state_clock.getElapsedTime().asMilliseconds() > 1000) {
-            dump_state();
-            pretty_command(rom[pc]);
-            cout<<'\n';
-            state_clock.restart();
-        }
     }
 
-    if(mode != RUN) {
+    dump_state();
+    pretty_command(rom[pc]);
+    cout<<'\n';
+    while(true) {
+        cout<<"> ";
+        string inp;
+        cin>>inp;
+
+        if(inp[0] == 'h' || inp[0] == '?') {
+            cout<<help<<'\n';
+        } else if (inp[0] == 'c') {
+            cout<<"continue execution from pc 0x"<<hex<<pc<<'\n';
+            mode = RUN;
+            break;
+        } else if(inp[0] == 's') {
+            mode = STEP;
+            step_completed = false;
+            break;
+        } else if(inp[0] == 'd') {
+            mode = STEP;
+            break;
+            // if current instr jump = STEP_OVER (run)
+        } else if(inp[0] == 'b') {
+            string addr;
+            cin>>addr;
+            breakpoints.insert(stoul(addr, 0, 0));
+            cout<<"created code breakpoint @ 0x"<<hex<<stoul(addr, 0, 0)<<'\n';
+        } else if(inp[0] == 'm') {
+            string addr;
+            cin>>addr;
+            int iadr = stoul(addr, 0, 0);
+            for(int i=0; i<8; i++) {
+                cout<<hex<<"0x"<<iadr+i<<": "<<"0x"<<ram[iadr+i];
+                if(ram[iadr+i] >= 0x20 && ram[iadr+i] <= 0x7F)  
+                    cout<<" ("<<(char)ram[iadr+i]<<")";
+                cout<<'\n';
+            }
+        } else if(inp[0] == 'p') {
+            string addr;
+            cin>>addr;
+            int iadr = stoul(addr, 0, 0);
+            for(int i=0; i<16; i++) {
+                cout<<hex<<"0x"<<iadr+i<<": "<<"0x"<<rom[iadr+i]<<" (";
+                pretty_command(rom[iadr+i]);
+                cout<<")\n";
+            }
+        } else {
+            cout<<"unknown command\n";
+        }
+    }
+}
+
+void Debugger::dumpOnTimer() {
+    unsigned int pc = get_real_pc();
+
+    if(state_clock.getElapsedTime().asMilliseconds() > 1000) {
         dump_state();
         pretty_command(rom[pc]);
         cout<<'\n';
-        while(true) {
-            cout<<"> ";
-            string inp;
-            cin>>inp;
-
-            if(inp[0] == 'h' || inp[0] == '?') {
-                cout<<help<<'\n';
-            } else if (inp[0] == 'c') {
-                cout<<"continue execution from pc 0x"<<hex<<pc<<'\n';
-                mode = RUN;
-                break;
-            } else if(inp[0] == 's') {
-                mode = STEP;
-                break;
-            } else if(inp[0] == 'd') {
-                mode = STEP;
-                break;
-                // if current instr jump = STEP_OVER (run)
-            } else if(inp[0] == 'b') {
-                string addr;
-                cin>>addr;
-                breakpoints.insert(stoul(addr, 0, 0));
-                cout<<"created code breakpoint @ 0x"<<hex<<stoul(addr, 0, 0)<<'\n';
-            } else if(inp[0] == 'm') {
-                string addr;
-                cin>>addr;
-                int iadr = stoul(addr, 0, 0);
-                for(int i=0; i<8; i++) {
-                    cout<<hex<<"0x"<<iadr+i<<": "<<"0x"<<ram[iadr+i];
-                    if(ram[iadr+i] >= 0x20 && ram[iadr+i] <= 0x7F)  
-                        cout<<" ("<<(char)ram[iadr+i]<<")";
-                    cout<<'\n';
-                }
-            } else if(inp[0] == 'p') {
-                string addr;
-                cin>>addr;
-                int iadr = stoul(addr, 0, 0);
-                for(int i=0; i<16; i++) {
-                    cout<<hex<<"0x"<<iadr+i<<": "<<"0x"<<rom[iadr+i]<<" (";
-                    pretty_command(rom[iadr+i]);
-                    cout<<")\n";
-                }
-            }
-        }
+        state_clock.restart();
     }
 }
 
@@ -182,9 +197,8 @@ void Debugger::pretty_command(unsigned int instr) {
 }
 
 void Debugger::dump_state() {
-    unsigned int pc = (cpu->state.sr2_jtr & 0x2) ?  
-                      (cpu->page_rom[(cpu->state.pc>>12)]<<12) | (cpu->state.pc & 0x0FFF) :
-                      cpu->state.pc;
+    unsigned int pc = get_real_pc();
+
     cout<<"pc: 0x"<<hex<<pc<<" (";
     pretty_prog_addr(pc); cout<<") ";
     for(int i=0; i<8; i++){

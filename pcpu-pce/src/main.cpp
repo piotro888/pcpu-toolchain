@@ -31,10 +31,17 @@ int main(int argc, char* argv[]) {
 
     vga.init();
     
+    std::thread debugger_thread(&Debugger::threadLoop, &dbg);
+
     sf::Clock render_clock;
     // execution loop
     while(1) {
-        cpu.execute();
+        if(dbg.mode == Debugger::mode::RUN) {
+            cpu.execute();
+        } else if(dbg.mode == Debugger::mode::STEP && !dbg.step_completed) {
+            cpu.execute();
+            dbg.step_completed = true;
+        }
 
         if(render_clock.getElapsedTime().asMilliseconds() >= 50) { // render at 20 fps
             vga.processEventQueue();
@@ -43,10 +50,10 @@ int main(int argc, char* argv[]) {
             if(vga.should_close)
                 break;
 
+            if(dbg.mode == Debugger::mode::RUN)
+                dbg.dumpOnTimer();
             render_clock.restart();
         }
-
-        dbg.interactive();
     }
     return 0;
 }

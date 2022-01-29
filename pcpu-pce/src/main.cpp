@@ -43,6 +43,11 @@ int main(int argc, char* argv[]) {
             dbg.step_completed = true;
         }
 
+        if(dbg.breakpoints.count(cpu.state.pc) && dbg.mode != Debugger::mode::STEP) {
+            dbg.mode = Debugger::mode::STEP;
+            std::cout<<"paused at breakpoint 0x"<<std::hex<<cpu.state.pc<<"\n";
+        }
+
         if(render_clock.getElapsedTime().asMilliseconds() >= 50) { // render at 20 fps
             vga.processEventQueue();
             vga.redraw();

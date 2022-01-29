@@ -26,17 +26,12 @@ inline unsigned int Debugger::get_real_pc() {
 void Debugger::interactive() {
     unsigned int pc = get_real_pc();
     
-    if(mode == RUN || mode == STEP_OVER) {
-        if(breakpoints.count(cpu->state.pc)) {
-            mode = STEP;
-            cout<<"paused at breakpoint 0x"<<hex<<pc<<"\n";
-        }
-    }
-
-    dump_state();
-    pretty_command(rom[pc]);
-    cout<<'\n';
     while(true) {
+        while(mode == STEP && !step_completed);
+        dump_state();
+        pretty_command(rom[pc]);
+        cout<<'\n';
+
         cout<<"> ";
         string inp;
         cin>>inp;

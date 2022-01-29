@@ -1,5 +1,3 @@
-#pragma once
-
 #ifndef CORE_H
 #define CORE_H
 
@@ -12,7 +10,7 @@ struct cpu_state {
         int state_result = 0;
 
         int sr1_control = 1;
-        int sr2_jtr = 0, sr2_jtr_buff = 0;
+        int sr2_jtr = 0, sr2_jtr_buff = 0, sr3_tmp_pc = 0, sr6_scratch = 0;
 };
 
 const static int RAM_SIZE = (1<<20);

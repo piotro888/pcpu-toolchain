@@ -80,6 +80,12 @@ void CPU::execute() {
             state.r[tg] = state.sr1_control;
         else if(ia == 2)
             state.r[tg] = state.sr2_jtr;
+        else if(ia == 3)
+            state.r[tg] = state.sr3_tmp_pc;
+        else if(ia == 4)
+            state.r[tg] = state.state_result;
+        else if(ia == 6)
+            state.r[tg] = state.sr6_scratch;
     } else if (opcode == 0x11) {
         if(ia == 0) {
             state.pc = state.r[fo] + 1;
@@ -88,10 +94,24 @@ void CPU::execute() {
             state.sr1_control = state.r[fo];
         else if(ia == 2)
             state.sr2_jtr_buff = state.r[fo];
+        else if(ia == 3)
+            state.sr3_tmp_pc = state.r[fo];
+        else if(ia == 4)
+            state.state_result = state.r[fo];
+        else if(ia == 6)
+            state.sr6_scratch = state.r[fo];
         else if(ia >= 0x10 && ia < 0x20)
             page_ram[ia-0x10] = state.r[fo];
         else if(ia >= 0x20 && ia < 0x30)
             page_rom[ia-0x20] = state.r[fo];
+    } else if (opcode == 0x12) {
+        state.pc = 0x1;
+        state.sr2_jtr &= ~(0b10); // disable prom page
+        state.sr2_jtr_buff &= ~(0b10);
+        state.sr1_control &= ~(SR1_MEMPAGE);
+        state.sr1_control &= ~(SR1_IRQ);
+        state.sr1_control |= (SR1_SUP);
+        state.sr3_tmp_pc = pc_addr+1;
     } else if (opcode == 0x13) {
         state.state_result = state.r[fo] & state.r[so];
         state.r[tg] = state.r[fo] & state.r[so];
@@ -124,7 +144,10 @@ void CPU::execute() {
     } else if (opcode == 0x1D) {
         state.state_result =  (unsigned short)state.r[fo]/(unsigned short)state.r[so];
         state.r[tg] =  (unsigned short)state.r[fo]/(unsigned short)state.r[so];
-    } else {
+    } else if (opcode == 0x1E) {
+        state.pc = state.sr3_tmp_pc;
+        state.sr1_control |= (SR1_IRQ);
+        state.sr2_jtr = state.sr2_jtr_buff;
     }
 }
 

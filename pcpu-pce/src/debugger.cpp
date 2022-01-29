@@ -153,7 +153,7 @@ void Debugger::pretty_command(unsigned int instr) {
         else if(ia == 2)
             cout<<"jtr";
         else
-            cout<<"unknown";
+            cout<<"unknown ("<<ia<<")";
     } else if (opcode == 0x11) {
         cout<<"srs r"<<fo<<", ";
         if(ia == 0)
@@ -163,7 +163,7 @@ void Debugger::pretty_command(unsigned int instr) {
         else if(ia == 2)
             cout<<"jtr";
         else
-            cout<<"unknown";
+            cout<<"unknown ("<<ia<<")";
     } else if (opcode == 0x13){
         cout<<"and r"<<tg<<", r"<<fo<<", r"<<so;
     } else if (opcode == 0x14){
@@ -186,6 +186,8 @@ void Debugger::pretty_command(unsigned int instr) {
         cout<<"mul r"<<tg<<", r"<<fo<<", r"<<so;
     } else if (opcode == 0x1D){
         cout<<"div r"<<tg<<", r"<<fo<<", r"<<so;
+    } else if (opcode == 0x1E){
+        cout<<"irt";
     } else {
         cout<<"illegal opcode";
     }

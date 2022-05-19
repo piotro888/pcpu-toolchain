@@ -34,6 +34,7 @@ int main(int argc, char* argv[]) {
     std::thread debugger_thread(&Debugger::threadLoop, &dbg);
 
     sf::Clock render_clock;
+    sf::Clock irq_clock;
     // execution loop
     while(1) {
         if(dbg.mode == Debugger::mode::RUN) {
@@ -58,6 +59,12 @@ int main(int argc, char* argv[]) {
             if(dbg.mode == Debugger::mode::RUN)
                 dbg.dumpOnTimer();
             render_clock.restart();
+        }
+
+        if(irq_clock.getElapsedTime().asMilliseconds() > 100) {
+            // trigger timer irq
+            cpu.triggerIRQ(1);
+            irq_clock.restart();
         }
     }
     return 0;

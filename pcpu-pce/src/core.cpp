@@ -8,6 +8,7 @@ unsigned int rom[RAM_SIZE];
 
 void CPU::execute() {
     unsigned int pc_addr = state.pc;
+    unsigned int pc_addr_b = state.pc;
     
     if(state.sr2_jtr & 0x2)
         pc_addr = (page_rom[(state.pc>>12)]<<12) | (state.pc & 0x0FFF);
@@ -84,6 +85,8 @@ void CPU::execute() {
             state.r[tg] = state.sr3_tmp_pc;
         else if(ia == 4)
             state.r[tg] = state.state_result;
+        else if(ia == 5)
+            state.r[tg] = state.sr5_irq_flags;
         else if(ia == 6)
             state.r[tg] = state.sr6_scratch;
     } else if (opcode == 0x11) {
@@ -98,6 +101,8 @@ void CPU::execute() {
             state.sr3_tmp_pc = state.r[fo];
         else if(ia == 4)
             state.state_result = state.r[fo];
+        else if(ia == 4)
+            state.sr5_irq_flags = state.r[fo];
         else if(ia == 6)
             state.sr6_scratch = state.r[fo];
         else if(ia >= 0x10 && ia < 0x20)
@@ -106,12 +111,14 @@ void CPU::execute() {
             page_rom[ia-0x20] = state.r[fo];
     } else if (opcode == 0x12) {
         state.pc = 0x1;
+        state.sr5_irq_flags = 0b1000 | ((state.sr1_control&SR1_MEMPAGE)>0)
+        | (((state.sr2_jtr & 0b10)>0)<<1) | (((state.sr1_control&SR1_SUP)>0)<<2);
         state.sr2_jtr &= ~(0b10); // disable prom page
         state.sr2_jtr_buff &= ~(0b10);
         state.sr1_control &= ~(SR1_MEMPAGE);
         state.sr1_control &= ~(SR1_IRQ);
         state.sr1_control |= (SR1_SUP);
-        state.sr3_tmp_pc = pc_addr+1;
+        state.sr3_tmp_pc = pc_addr_b+1;
     } else if (opcode == 0x13) {
         state.state_result = state.r[fo] & state.r[so];
         state.r[tg] = state.r[fo] & state.r[so];
@@ -149,6 +156,19 @@ void CPU::execute() {
         state.sr1_control |= (SR1_IRQ);
         state.sr2_jtr = state.sr2_jtr_buff;
     }
+
+    if ((pending_irq || (irq_mask & irq_trig)) && (state.sr1_control & (SR1_IRQ)) && opcode != 0x1E) {
+        pending_irq = false;
+        state.pc = 0x1;
+        state.sr5_irq_flags = 0b0000 | ((state.sr1_control&SR1_MEMPAGE)>0)
+        | (((state.sr2_jtr & 0b10)>0)<<1) | (((state.sr1_control&SR1_SUP)>0)<<2);
+        state.sr2_jtr &= ~(0b10); // disable prom page
+        state.sr2_jtr_buff &= ~(0b10);
+        state.sr1_control &= ~(SR1_MEMPAGE);
+        state.sr1_control &= ~(SR1_IRQ);
+        state.sr1_control |= (SR1_SUP);
+        state.sr3_tmp_pc = pc_addr;
+    }
 }
 
 void CPU::memWrite(unsigned short address_r, unsigned short data) {
@@ -162,6 +182,8 @@ void CPU::memWrite(unsigned short address_r, unsigned short data) {
             periph_vga->write(address-0x1000, data);
         } else if (address == 0x4) {
             periph_sd->spi4write(data);
+        } else if (address == 0x12) {
+            irq_trig &= ~data;
         }
     } else {
         rom[(address>>1)] &= (address & 1) ? 0xFFFF : 0xFFFF0000;
@@ -169,17 +191,30 @@ void CPU::memWrite(unsigned short address_r, unsigned short data) {
     }
 }
 
-unsigned short CPU::memRead(unsigned short address) {
+unsigned short CPU::memRead(unsigned short address_r) {
+    unsigned int address = address_r;
+    if(state.sr1_control & SR1_MEMPAGE)
+        address = (page_ram[(address_r>>12)]<<12) | (address_r & 0x0FFF);
+    
     if(address >= 0x4c00) {
         return ram[address];
     } else if (address >= 0x1000 && address < 0x4c00) {
         return 0;
+    } else if (address == 0x3) {
+        return periph_vga->last_scancode;
     } else if (address == 0x4) {
         return periph_sd->spi4read();
+    } else if (address == 0x10) {
+        return irq_trig;
     }
     return 0;
 }
 
 void CPU::memWriteProgram(unsigned short address, unsigned int data) {
     rom[address] = data;
+}
+
+void CPU::triggerIRQ(int n) {
+    CPU::pending_irq = true;
+    irq_trig |= (1<<n);
 }

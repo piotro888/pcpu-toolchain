@@ -68,7 +68,7 @@ int main(int argc, char* argv[]) {
             render_clock.restart();
         }
 
-        if(irq_clock.getElapsedTime().asMilliseconds() > 100) {
+        if(irq_clock.getElapsedTime().asMilliseconds() > 100 && dbg.mode == Debugger::RUN) {
             // trigger timer irq
             cpu.triggerIRQ(1);
             irq_clock.restart();

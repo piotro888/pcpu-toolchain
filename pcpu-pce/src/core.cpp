@@ -159,7 +159,9 @@ void CPU::execute() {
 
     if ((pending_irq || (irq_mask & irq_trig)) && (state.sr1_control & (SR1_IRQ)) && opcode != 0x1E) {
         pending_irq = false;
+        int next_pl_pc = state.pc;
         state.pc = 0x1;
+                       
         state.sr5_irq_flags = 0b0000 | ((state.sr1_control&SR1_MEMPAGE)>0)
         | (((state.sr2_jtr & 0b10)>0)<<1) | (((state.sr1_control&SR1_SUP)>0)<<2);
         state.sr2_jtr &= ~(0b10); // disable prom page
@@ -167,7 +169,7 @@ void CPU::execute() {
         state.sr1_control &= ~(SR1_MEMPAGE);
         state.sr1_control &= ~(SR1_IRQ);
         state.sr1_control |= (SR1_SUP);
-        state.sr3_tmp_pc = pc_addr;
+        state.sr3_tmp_pc = next_pl_pc;
     }
 }
 

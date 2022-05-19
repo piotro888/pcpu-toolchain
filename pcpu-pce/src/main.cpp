@@ -5,12 +5,17 @@
 #include "loader.h"
 #include "debbuger.h"
 
+CPU* t_cpu;
+
 int main(int argc, char* argv[]) {
-    if(argc != 4) {
+    if(argc < 4) {
         std::cerr<<"Missing arguments!";
         std::cout<<"Usage: pce [pbl kernel file] [memory map file] [iso file]\n";
         return 1;
     }
+    bool start_run = false;
+    if(argc > 4 && !strcmp(argv[4], "--run"))
+        start_run = true;
 
     std::ifstream file;
     
@@ -18,13 +23,14 @@ int main(int argc, char* argv[]) {
     SD sd(argv[3]);
 
     CPU cpu(&vga, &sd);
+    t_cpu = &cpu;
 
     Loader ld;
     file.open(argv[1]);
     ld.loadPBL(file, cpu);
     file.close();
 
-    Debugger dbg(&cpu);
+    Debugger dbg(&cpu, start_run);
     file.open(argv[2]);
     dbg.loadMemMap(file);
     file.close();
@@ -49,9 +55,10 @@ int main(int argc, char* argv[]) {
             std::cout<<"paused at breakpoint 0x"<<std::hex<<cpu.state.pc<<"\n";
         }
 
-        if(render_clock.getElapsedTime().asMilliseconds() >= 50) { // render at 20 fps
+        if(render_clock.getElapsedTime().asMilliseconds() >= 20) {
             vga.processEventQueue();
             vga.redraw();
+            vga.submit_scancodes();
 
             if(vga.should_close)
                 break;
@@ -69,5 +76,3 @@ int main(int argc, char* argv[]) {
     }
     return 0;
 }
-
-

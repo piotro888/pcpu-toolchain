@@ -6,7 +6,7 @@
 
 class Debugger {
 public:
-    Debugger(CPU* _cpu);
+    Debugger(CPU* _cpu, bool run);
     
     enum mode { RUN, STEP, STEP_OVER };
     std::atomic <mode> mode;

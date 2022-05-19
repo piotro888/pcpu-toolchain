@@ -7,8 +7,8 @@ using namespace std;
 
 const string help = "Commands:\nh - help\nc - continue\ns - step\nd - step over\nb <addr> - set breakpoint\nm <addr> - dump mem\np <addr> - dump prog mem\nw - where am i?\nlb - list breakpoints\nmb - memory breakpoint\nf - continue to function call/ret";
 
-Debugger::Debugger(CPU* _cpu) : cpu(_cpu) {
-    mode = STEP; // find a way to non blocking io or signal to switch to step from run
+Debugger::Debugger(CPU* _cpu, bool run=false) : cpu(_cpu) {
+    mode = (run ? RUN : STEP);
     step_completed = true;
 }
 
@@ -23,12 +23,11 @@ inline unsigned int Debugger::get_real_pc() {
                  cpu->state.pc;
 }
 
-void Debugger::interactive() {
-    unsigned int pc = get_real_pc();
-    
+void Debugger::interactive() {    
     while(true) {
         while(mode == STEP && !step_completed);
         dump_state();
+        unsigned int pc = get_real_pc(); 
         pretty_command(rom[pc]);
         cout<<'\n';
 

@@ -56,8 +56,35 @@ void VGA::redraw() {
 }
 
 void VGA::write(uint16_t addr, uint16_t data) {
+    if(addr == 0x3001) {
+        int diff = data - fast_scroll;
+        fast_scroll = data;
+        if(diff < 0)
+            diff += NUM_ROWS;
+
+        for(int z=0; z<diff; z++) {
+            for(int j=0; j<NUM_COLS; j++) {
+                text_fg[NUM_ROWS][j].setString(text_fg[0][j].getString());
+                text_fg[NUM_ROWS][j].setFillColor(text_fg[0][j].getFillColor());
+                text_bg[NUM_ROWS][j].setFillColor(text_bg[0][j].getFillColor());
+            }
+
+            for(int i=0; i<NUM_ROWS; i++) {
+                for(int j=0; j<NUM_COLS; j++) {
+                    text_fg[i][j].setString(text_fg[i+1][j].getString());
+                    text_fg[i][j].setFillColor(text_fg[i+1][j].getFillColor());
+                    text_bg[i][j].setFillColor(text_bg[i+1][j].getFillColor());
+                }
+            }
+        }
+
+        return;
+    }
+
     int col = addr%106;
     int row = addr/106;
+    row += NUM_ROWS-fast_scroll;
+    row %= NUM_ROWS;
 
     if(row >= 48)
         return;

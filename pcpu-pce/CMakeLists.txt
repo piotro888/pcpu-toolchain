@@ -1,7 +1,7 @@
-cmake_minimum_required(VERSION 3.13)
+cmake_minimum_required(VERSION 3.10)
 project(PCPUEMU)
 
-set(CMAKE_CXX_FLAGS "-Wall -Wextra -O2 -g -lpthread")
+set(CMAKE_CXX_FLAGS "-Wall -Wextra -O2 -g")
 
 include_directories(include)
 
@@ -15,4 +15,4 @@ set(sources ${sources}
 )
 
 add_executable(pce ${sources})
-target_link_libraries(pce sfml-graphics sfml-window sfml-system)
+target_link_libraries(pce sfml-graphics sfml-window sfml-system pthread)

@@ -23,7 +23,7 @@ make
 
 if [ $? -ne 0 ]; then
     echo "*** PCE COMPILATION FAILED"
-    return 1;
+    exit 1;
 fi
 
 mkdir -p $install_dir

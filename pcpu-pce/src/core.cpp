@@ -16,7 +16,7 @@ void CPU::execute() {
     unsigned int instr = rom[pc_addr];
 
     int opcode = instr & 0x7F;
-    short ia = instr>>16;
+    unsigned short ia = instr>>16;
     int tg = (instr>>7)&0b111;
     int fo = (instr>>10)&0b111;
     int so = (instr>>13)&0b111;
@@ -60,14 +60,14 @@ void CPU::execute() {
         state.state_result = (int)state.r[fo] - (int)ia;
     } else if (opcode == 0xE) {
         int cond_code = (instr >> 7) & 0b1111;
-        if((cond_code == 0x0) |
+        if((cond_code == 0x0) ||
             (cond_code == 0x1 && (state.state_result & (1<<16))) ||
             (cond_code == 0x2 && ((short)state.state_result == 0)) ||
             (cond_code == 0x3 && ((short)state.state_result < 0 )) ||
             (cond_code == 0x4 && ((short)state.state_result > 0)) ||
             (cond_code == 0x5 && ((short)state.state_result <= 0)) ||
             (cond_code == 0x6 && ((short)state.state_result >= 0)) ||
-            (cond_code == 0x7 && (state.state_result != 0)) ) {
+            (cond_code == 0x7 && ((short)state.state_result != 0)) ) {
             state.pc = ia;
         }
         state.sr2_jtr = state.sr2_jtr_buff;

@@ -50,8 +50,8 @@
   "@
   mov %0, %1
   ldi %0, %1
-  sto**8 %1, %0
-  ldo**8 %0, %1")
+  so8 %1, %0
+  lo8 %0, %1")
 
 (define_insn "zero_extendqihi2"
   [(set (match_operand:HI 0 "register_operand" "=r")

@@ -23,8 +23,8 @@ public:
     cpu_state state;
     void execute();
 
-    void memWrite(unsigned short address, unsigned short data);
-    unsigned short memRead(unsigned short address);
+    void memWrite(unsigned short address, unsigned short data, bool mem8=false);
+    unsigned short memRead(unsigned short address, bool mem8=false);
     void memWriteProgram(unsigned short address, unsigned int data);
     void triggerIRQ(int n);
 
@@ -41,5 +41,6 @@ private:
 #define SR1_IMO 2
 #define SR1_IRQ 4
 #define SR1_MEMPAGE 8
+#define SR1_MEMSTD 16
 
 #endif

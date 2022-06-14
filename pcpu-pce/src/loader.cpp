@@ -22,7 +22,7 @@ bool Loader::loadPBL(std::ifstream& file, CPU& cpu) {
         rom_addr++;
     }
     
-    int ram_loc = 0x4c00;
+    int ram_loc = 0x5000/2;
     for(unsigned int i=spos; i<line.size(); i+=4) {
         if(line[i] == '*') {
             break;

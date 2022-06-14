@@ -56,7 +56,7 @@ void VGA::redraw() {
 }
 
 void VGA::write(uint16_t addr, uint16_t data) {
-    if(addr == 0x3001) {
+    if(addr == 0x2581) {
         int diff = data - fast_scroll;
         fast_scroll = data;
         if(diff < 0)

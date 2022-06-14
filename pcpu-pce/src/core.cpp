@@ -155,6 +155,14 @@ void CPU::execute() {
         state.pc = state.sr3_tmp_pc;
         state.sr1_control |= (SR1_IRQ);
         state.sr2_jtr = state.sr2_jtr_buff;
+    } else if (opcode == 0x1F) {
+        state.r[tg] = memRead(ia, true);
+    } else if (opcode == 0x20) {
+        state.r[tg] = memRead(state.r[fo]+ia, true);
+    } else if (opcode == 0x21) {
+        memWrite(ia, state.r[fo], true);
+    } else if (opcode == 0x22) {
+        memWrite(state.r[so]+ia, state.r[fo], true);
     }
 
     if ((pending_irq || (irq_mask & irq_trig)) && (state.sr1_control & (SR1_IRQ)) && opcode != 0x1E) {
@@ -169,47 +177,61 @@ void CPU::execute() {
         state.sr1_control &= ~(SR1_MEMPAGE);
         state.sr1_control &= ~(SR1_IRQ);
         state.sr1_control |= (SR1_SUP);
+        state.sr1_control |= (SR1_MEMSTD);
         state.sr3_tmp_pc = next_pl_pc;
     }
+    //dbgz->dump_state();
 }
 
-void CPU::memWrite(unsigned short address_r, unsigned short data) {
+void CPU::memWrite(unsigned short address_r, unsigned short data, bool mem8) {
     unsigned int address = address_r;
     if(state.sr1_control & SR1_MEMPAGE)
-        address = (page_ram[(address_r>>12)]<<12) | (address_r & 0x0FFF);
+        address = (page_ram[(address_r>>12)]<<12) | (address_r & 0x0FFF);   
+    unsigned int bus_mask = (((state.sr1_control & SR1_MEMSTD) && mem8) ? (address&1 ? 0x00ff : 0xff00) : 0xffff); // LE
+    if(state.sr1_control & SR1_MEMSTD)
+        address >>= 1;
+    
+    // todo periph
     if(!(state.sr1_control & SR1_IMO)) { 
-        if(address >= 0x4c00) {
-            ram[address] = data;
-        } else if (address >= 0x1000 && address < 0x4c00) {
-            periph_vga->write(address-0x1000, data);
+        if(address >= 0x2682) {
+            ram[address] &= (~bus_mask);
+            ram[address] |= (bus_mask == 0xff00 ? data<<8 : data) & bus_mask;
+        } else if (address >= 0x100 && address < 0x2682) {
+            periph_vga->write(address-0x100, data);
         } else if (address == 0x4) {
             periph_sd->spi4write(data);
         } else if (address == 0x12) {
             irq_trig &= ~data;
         }
-    } else {
+    } else { // it is ok to clarify paging access
         rom[(address>>1)] &= (address & 1) ? 0xFFFF : 0xFFFF0000;
         rom[(address>>1)] |= (address & 1) ? (data<<16) : data;
     }
 }
 
-unsigned short CPU::memRead(unsigned short address_r) {
+unsigned short CPU::memRead(unsigned short address_r, bool mem8) {
     unsigned int address = address_r;
     if(state.sr1_control & SR1_MEMPAGE)
         address = (page_ram[(address_r>>12)]<<12) | (address_r & 0x0FFF);
+    unsigned int bus_mask = (((state.sr1_control & SR1_MEMSTD) && mem8) ? (address&1 ? 0x00ff : 0xff00) : 0xffff);
+    if(state.sr1_control & SR1_MEMSTD)
+        address >>= 1;
     
-    if(address >= 0x4c00) {
-        return ram[address];
-    } else if (address >= 0x1000 && address < 0x4c00) {
-        return 0;
+    unsigned int ret = 0;
+    if(address >= 0x2682) {
+        ret = ram[address];
+    } else if (address >= 0x0100 && address < 0x2682) {
+        ret = 0;
     } else if (address == 0x3) {
-        return periph_vga->last_scancode;
+        ret = periph_vga->last_scancode;
     } else if (address == 0x4) {
-        return periph_sd->spi4read();
+        ret = periph_sd->spi4read();
     } else if (address == 0x10) {
-        return irq_trig;
+        ret = irq_trig;
     }
-    return 0;
+ 
+    ret &= bus_mask;
+    return (bus_mask == 0xff00 ? (ret >> 8) : ret);
 }
 
 void CPU::memWriteProgram(unsigned short address, unsigned int data) {

@@ -58,11 +58,27 @@ void Debugger::interactive() {
             string addr;
             cin>>addr;
             int iadr = stoul(addr, 0, 0);
-            for(int i=0; i<8; i++) {
-                cout<<hex<<"0x"<<iadr+i<<": "<<"0x"<<ram[iadr+i];
-                if(ram[iadr+i] >= 0x20 && ram[iadr+i] <= 0x7F)  
-                    cout<<" ("<<(char)ram[iadr+i]<<")";
-                cout<<'\n';
+            if(cpu->state.sr1_control & SR1_MEMSTD) {
+                iadr /= 2;
+                for(int i=0; i<8; i++) {
+                    int dat = ram[iadr+i]>>8;
+                    cout<<hex<<"0x"<<(iadr+i)*2<<": "<<"0x"<<dat<<" [0x"<<((ram[iadr+i]>>8)|((ram[iadr+i]&0xff)<<8))<<"]";
+                    if(dat >= 0x20 && dat <= 0x7F)  
+                        cout<<" ("<<(char)dat<<")";
+                    cout<<'\n';
+                    dat = ram[iadr+i]&0xff;
+                    cout<<hex<<"0x"<<(iadr+i)*2+1<<": "<<"0x"<<dat;
+                    if(dat >= 0x20 && dat <= 0x7F)  
+                        cout<<" ("<<(char)dat<<")";
+                    cout<<'\n';
+                }
+            } else {
+                for(int i=0; i<8; i++) {
+                    cout<<hex<<"0x"<<iadr+i<<": "<<"0x"<<ram[iadr+i];
+                    if(ram[iadr+i] >= 0x20 && ram[iadr+i] <= 0x7F)  
+                        cout<<" ("<<(char)ram[iadr+i]<<")";
+                    cout<<'\n';
+                }
             }
         } else if(inp[0] == 'p') {
             string addr;
@@ -104,13 +120,13 @@ void Debugger::pretty_command(unsigned int instr) {
     } else if (opcode == 0x2){
         cout<<"ldd r"<<tg<<", 0x"<<hex<<ia;
     } else if (opcode == 0x3){
-        cout<<"ldo r"<<tg<<", r"<<fo<<", 0x"<<hex<<ia;
+        cout<<"ldo r"<<tg<<", r"<<fo<<", 0x"<<hex<<ia<<" =0x"<<(unsigned short)((signed short)cpu->state.r[fo]+(signed short)ia);
     } else if (opcode == 0x4){
         cout<<"ldi r"<<tg<<", 0x"<<hex<<ia;
     } else if (opcode == 0x5){
         cout<<"std r"<<fo<<", 0x"<<hex<<ia;
     } else if (opcode == 0x6){
-        cout<<"sto r"<<fo<<", r"<<so<<", 0x"<<hex<<ia;
+        cout<<"sto r"<<fo<<", r"<<so<<", 0x"<<hex<<ia<<" =0x"<<(unsigned short)((signed short)cpu->state.r[so]+(signed short)ia);
     } else if (opcode == 0x7){
         cout<<"add r"<<tg<<", r"<<fo<<", r"<<so;
     } else if (opcode == 0x8){
@@ -187,6 +203,14 @@ void Debugger::pretty_command(unsigned int instr) {
         cout<<"div r"<<tg<<", r"<<fo<<", r"<<so;
     } else if (opcode == 0x1E){
         cout<<"irt";
+    } else if (opcode == 0x1F){
+        cout<<"ld8 r"<<tg<<", 0x"<<hex<<ia;
+    } else if (opcode == 0x20){
+        cout<<"lo8 r"<<tg<<", r"<<fo<<", 0x"<<hex<<ia<<" =0x"<<(unsigned short)((signed short)cpu->state.r[fo]+(signed short)ia);
+    } else if (opcode == 0x21){
+        cout<<"sd8 r"<<fo<<", 0x"<<hex<<ia;
+    } else if (opcode == 0x22){
+        cout<<"so8 r"<<fo<<", r"<<so<<", 0x"<<hex<<ia<<" =0x"<<(unsigned short)((signed short)cpu->state.r[so]+(signed short)ia);
     } else {
         cout<<"illegal opcode";
     }

@@ -101,7 +101,7 @@ void CPU::execute() {
             state.sr3_tmp_pc = state.r[fo];
         else if(ia == 4)
             state.state_result = state.r[fo];
-        else if(ia == 4)
+        else if(ia == 5)
             state.sr5_irq_flags = state.r[fo];
         else if(ia == 6)
             state.sr6_scratch = state.r[fo];
@@ -180,22 +180,27 @@ void CPU::execute() {
         state.sr1_control |= (SR1_MEMSTD);
         state.sr3_tmp_pc = next_pl_pc;
     }
-    //dbgz->dump_state();
 }
 
 void CPU::memWrite(unsigned short address_r, unsigned short data, bool mem8) {
     unsigned int address = address_r;
     if(state.sr1_control & SR1_MEMPAGE)
-        address = (page_ram[(address_r>>12)]<<12) | (address_r & 0x0FFF);   
-    unsigned int bus_mask = (((state.sr1_control & SR1_MEMSTD) && mem8) ? (address&1 ? 0x00ff : 0xff00) : 0xffff); // LE
+        address = (page_ram[(address_r>>12)]<<12) | (address_r & 0x0FFF);
+    // simulate memory endianess in memstd mode. 0xff is second address and 0xff00 is first (because of original bootloader order)
+    unsigned int bus_mask = (((state.sr1_control & SR1_MEMSTD) && mem8) ? (address&1 ? 0x00ff : 0xff00) : 0xffff);
     if(state.sr1_control & SR1_MEMSTD)
         address >>= 1;
     
     // todo periph
     if(!(state.sr1_control & SR1_IMO)) { 
         if(address >= 0x2682) {
-            ram[address] &= (~bus_mask);
-            ram[address] |= (bus_mask == 0xff00 ? data<<8 : data) & bus_mask;
+            if(bus_mask == 0xffff && (state.sr1_control & SR1_MEMSTD)) {
+                // 16bit value is stored like LE
+                ram[address] = ((data&0xff)<<8) | (data>>8);
+            } else {
+                ram[address] &= (~bus_mask);
+                ram[address] |= (bus_mask == 0xff00 ? data<<8 : data) & bus_mask;
+            }
         } else if (address >= 0x100 && address < 0x2682) {
             periph_vga->write(address-0x100, data);
         } else if (address == 0x4) {
@@ -220,6 +225,8 @@ unsigned short CPU::memRead(unsigned short address_r, bool mem8) {
     unsigned int ret = 0;
     if(address >= 0x2682) {
         ret = ram[address];
+        if(bus_mask == 0xffff && (state.sr1_control & SR1_MEMSTD))
+            ret = ((ret&0xff)<<8) | (ret>>8);
     } else if (address >= 0x0100 && address < 0x2682) {
         ret = 0;
     } else if (address == 0x3) {
